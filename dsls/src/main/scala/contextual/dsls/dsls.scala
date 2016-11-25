@@ -3,15 +3,20 @@ package dsls
 import contextual._
 
 object `package` {
-  
+ 
+  implicit val embedBoolean = SimpleParser.embed[Boolean](
+    transition(Bare, InString)(_ => "!!!"),
+    transition(InString, Bare)(_ => "!!!")
+  )
+
   implicit val embedSymbol = SimpleParser.embed[Symbol](
-    into(Bare)("#"+_.name),
-    into(InString)("@"+_.name)
+    transition(Bare, Bare)("#"+_.name),
+    transition(InString, InString)("@"+_.name)
   )
 
   implicit val embedString = SimpleParser.embed[String](
-    into(Bare) { s => "'"+s.toString+"'" },
-    into(InString)(_.toString)
+    transition(Bare, Bare) { s => "'"+s.toString+"'" },
+    transition(InString, InString)(_.toString)
   )
   
   implicit class TestStringContext(stringContext: StringContext) {
@@ -34,7 +39,7 @@ object SimpleParser extends Parser {
 
   def initialState = Bare
 
-  def stateMachine = {
+  def next = {
     case (InString, '"') => Bare
     case (Bare    , '"') => InString
     case (state, _  ) => state
@@ -42,6 +47,5 @@ object SimpleParser extends Parser {
 
 
 }
-
 
 

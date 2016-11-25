@@ -10,19 +10,22 @@ import language.existentials
 
 /** represents a compile-time failure in interpolation */
 case class InterpolationError(part: Int, offset: Int, message: String) extends Exception
+case class ParseError(msg: String) extends Exception
 
 object Context {
   sealed trait NoContext extends Context
   object NoContext extends NoContext
 }
 
-trait Context
+trait Context {
+  override def toString = getClass.getName.split("\\.").last.dropRight(1)
+}
 
 object Embedded {
-  implicit def embed[C <: Context, V, R, I <: Interpolator](value: V)(implicit handler: Handler[C, V, R, I]): Embedded[R, I] =
+  implicit def embed[CC <: (Context, Context), V, R, I <: Interpolator](value: V)(implicit handler: Handler[CC, V, R, I]): Embedded[R, I] =
     new Embedded[R, I] {
       def apply(ctx: Context): R = {
-        handler.handle(ctx).apply(value)
+        handler(ctx).apply(value)
       }
     }
 }
@@ -44,7 +47,7 @@ object Prefix {
 }
 
 class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P, parts: Seq[String]) {
-  def apply(exprs: Embedded[interpolator.Inputs, interpolator.type]*): Any = macro Macros.contextual[interpolator.Result, C, P]
+  def apply(exprs: Embedded[interpolator.Inputs, interpolator.type]*): Any = macro Macros.contextual[C, P]
 }
 
 sealed trait RuntimeParseToken[+I]
@@ -63,19 +66,47 @@ case class Variable[+I](value: I) extends RuntimeParseToken[I] {
 
 trait Parser extends Interpolator {
  
-  def construct(tokens: Seq[RuntimeParseToken[Inputs]]): Result
+  def construct(tokens: Seq[RuntimeParseToken[Inputs]]): Any
 
   def initialState: Ctx
-  def stateMachine: (Ctx, Char) => Ctx
+  def endFailure(state: Ctx): Option[String] = None
+  def next: (Ctx, Char) => Ctx
 
-  def contexts(tokens: Seq[Literal]): Seq[Ctx] = tokens.foldLeft((List[Ctx](), initialState)) {
-    case ((holes, state), Literal(_, lit)) =>
-      val holeState = lit.to[Seq].foldLeft(state)(stateMachine)
-      (holeState :: holes, holeState)
-  }._1.tail.reverse
+  private def nextLiteral(lit: String, state: Ctx, holeNo: Int): Ctx = lit.indices.foldLeft(state) { (ctx: Ctx, idx: Int) =>
+    try next(ctx, lit(idx)) catch {
+      case ParseError(msg) => throw InterpolationError(holeNo, idx, msg)
+    }
+  }
 
-  def compile[P: c.WeakTypeTag](c: blackbox.Context)(literals: Seq[String],
-      parameters: Seq[c.Tree], holes: Seq[Hole[Ctx]]): c.Tree = {
+  private def contexts(c: whitebox.Context)(tokens: Seq[Literal], holes: Seq[Hole[(Ctx, Ctx)]]): Seq[Ctx] = {
+    val tokensWithHoles = tokens.zip(holes.map(Some(_)) :+ None)
+    
+    val (finalHoles, _) = tokensWithHoles.foldLeft((List[Ctx](), initialState)) {
+      case ((holes, state), (Literal(_, lit), hole)) =>
+        val currentIndex = holes.length
+        
+        val holeState = nextLiteral(lit, state, holes.size)
+        
+        val context: Option[(Ctx, Ctx)] = hole.map(_.input.find(_._1 == holeState).getOrElse {
+          val className = holeState.getClass.getName
+          throw InterpolationError(currentIndex, tokens(currentIndex).string.length, s"expected a value suitable for context ${className.dropRight(1)}")
+        })
+        val afterHoleState = context.map(_._2).getOrElse(holeState)
+
+        if(currentIndex + 1 == tokens.size) {
+          endFailure(holeState).foreach { msg =>
+            throw InterpolationError(tokens.length - 1, tokens.last.string.length, msg)
+          }
+        }
+
+        (holeState :: holes, afterHoleState)
+    }
+
+    finalHoles.tail.reverse
+  }
+
+  def compile[P: c.WeakTypeTag](c: whitebox.Context)(literals: Seq[String],
+      parameters: Seq[c.Tree], holes: Seq[Hole[(Ctx, Ctx)]]): c.Tree = {
     import c.universe.{Literal => _, _}
 
     val literalTokenTrees: Seq[c.Tree] = literals.to[List].zipWithIndex.map {
@@ -86,11 +117,11 @@ trait Parser extends Interpolator {
       case (lit, idx) => Literal(idx, lit)
     }
 
-    val contextTypes = contexts(literalTokens).zip(holes).zip(parameters).map { case ((ctx, hole), param) =>
+    val contextTypes = contexts(c)(literalTokens, holes).zip(holes).zip(parameters).map { case ((ctx, hole), param) =>
       val className = ctx.getClass.getName
       
-      if(!hole.input.contains(ctx)) c.error(param.pos, s"expected a value suitable for context ${className.dropRight(1)}")
-      
+      if(!hole.input.exists(_._1 == ctx)) c.error(param.pos, s"expected a value suitable for context ${className.dropRight(1)}")
+
       val classInstance = q"_root_.java.lang.Class.forName($className)"
       q"""$classInstance.getField("MODULE$$").get($classInstance) match {
             case c: _root_.contextual.Context => c
@@ -111,13 +142,12 @@ trait Parser extends Interpolator {
 trait Interpolator { interpolator =>
   type Ctx <: Context
   type Inputs  
-  type Result
 
-  def compile[P: c.WeakTypeTag](c: blackbox.Context)(literals: Seq[String],
-      parameters: Seq[c.Tree], holes: Seq[Hole[Ctx]]): c.Tree
+  def compile[P: c.WeakTypeTag](c: whitebox.Context)(literals: Seq[String],
+      parameters: Seq[c.Tree], holes: Seq[Hole[(Ctx, Ctx)]]): c.Tree
   
   class Embedding[I] protected[Interpolator] () {
-    def apply[C <: Context, R](cases: Case[C, I, R]*): Handler[C, I, R, interpolator.type] =
+    def apply[CC <: (Context, Context), R](cases: Case[CC, I, R]*): Handler[CC, I, R, interpolator.type] =
       new Handler(cases.to[List])
   }
 
@@ -125,7 +155,7 @@ trait Interpolator { interpolator =>
 }
 
 object Macros {
-  def contextual[R, C <: Context, P <: Interpolator { type Ctx = C }: c.WeakTypeTag](c: blackbox.Context)(exprs: c.Tree*): c.Tree = {
+  def contextual[C <: Context, P <: Interpolator { type Ctx = C }: c.WeakTypeTag](c: whitebox.Context)(exprs: c.Tree*): c.Tree = {
     import c.universe.{Literal => AstLiteral, _}
     
     // Get the string literals from the constructed `StringContext`.
@@ -155,14 +185,14 @@ object Macros {
       cls.getField("MODULE$").get(cls).asInstanceOf[M]
     }
 
-    val parameterTypes: Seq[Hole[C]] = appliedParameters.map {
+    val parameterTypes: Seq[Hole[(C, C)]] = appliedParameters.map {
       case Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
           case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
         }
-       
-        Hole[C](types.map { t => getModule[C](t.erasure) })
+        
+        Hole[(C, C)](types.map { t => (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1))) })
     }
 
     val interpolatorName = javaClassName(weakTypeOf[P].typeSymbol)
@@ -174,7 +204,7 @@ object Macros {
       case e: Exception => c.abort(c.enclosingPosition, e.toString)
     }
 
-    val combinedParts: List[CompileParseToken[C]] = Literal(0, literals.head) :: List(
+    val combinedParts: List[CompileParseToken[(C, C)]] = Literal(0, literals.head) :: List(
         parameterTypes.to[List], literals.to[List].tail.zipWithIndex.map { case (v, i) =>
         Literal(i + 1, v) }).transpose.flatten
 
@@ -194,14 +224,14 @@ object Macros {
 }
 
 
-object into {
-  def apply[C <: Context, V, R](context: C)(fn: V => R): Case[C, V, R] = Case(context, fn)
+object transition {
+  def apply[C <: Context, C2 <: Context, V, R](context: C, after: C2)(fn: V => R): Case[(C, C2), V, R] = Case(context, after, fn)
 }
 
-case class Case[-C <: Context, -V, +R](context: Context, fn: V => R)
+case class Case[-CC <: (Context, Context), -V, +R](context: Context, after: Context, fn: V => R)
 
-class Handler[C <: Context, V, R, I <: Interpolator](val cases: List[Case[C, V, R]]) {
-  def handle[C2](c: C2)(implicit ev: C <:< C2): V => R = {
+class Handler[CC <: (Context, Context), V, R, I <: Interpolator](val cases: List[Case[CC, V, R]]) {
+  def apply[C2](c: C2)(implicit ev: CC <:< (C2, Context)): V => R = {
     cases.find(_.context == c).get.fn
   }
 }
