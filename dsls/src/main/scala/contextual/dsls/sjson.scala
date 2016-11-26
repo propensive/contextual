@@ -2,20 +2,6 @@ package dsls.sjson
 
 import contextual._
 
-object `package` {
- 
-  implicit val embedString = SjsonParser.embed[String](
-    transition(Value, AfterValue) { s => '"'+s+'"' },
-    transition(InString, InString)(_.toString),
-    transition(InLabel, InLabel)(_.toString),
-    transition(ObjectStart, AfterLabel) { s => '"'+s+'"' }
-  )
-  
-  implicit class TestStringContext(stringContext: StringContext) {
-    val sjson = Prefix.withContext[SjsonContext](SjsonParser, stringContext)
-  }
-}
-
 case class Sjson(str: String)
 
 sealed trait SjsonContext extends Context
@@ -33,7 +19,6 @@ object SjsonParser extends Parser {
   def construct(tokens: Seq[RuntimeParseToken[String]]): Sjson = Sjson(tokens.mkString)
 
   def initialState = Value
-  override def endFailure(ctx: Ctx) = { println(ctx); if(ctx != AfterValue) Some("content is incomplete") else None }
 
   def next = {
     case (s, ' ' | '\r' | '\t' | '\n') => s
@@ -49,8 +34,20 @@ object SjsonParser extends Parser {
     case (s@(InLabel | InString), _)   => s
     case (state,       ch )            => throw ParseError(s"parsing failed: found character `$ch' in context `$state'")
   }
-
-
+  
+  override def endFailure(ctx: Ctx) = if(ctx != AfterValue) Some("content is incomplete") else None
 }
 
+object `package` {
+  implicit val embedString = SjsonParser.embed[String](
+    transition(Value, AfterValue) { s => '"'+s+'"' },
+    transition(InString, InString)(_.toString),
+    transition(InLabel, InLabel)(_.toString),
+    transition(ObjectStart, AfterLabel) { s => '"'+s+'"' }
+  )
+  
+  implicit class TestStringContext(stringContext: StringContext) {
+    val sjson = Prefix.withContext[SjsonContext](SjsonParser, stringContext)
+  }
+}
 

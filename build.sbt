@@ -1,6 +1,8 @@
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import ReleaseTransformations._
 
+crossScalaVersions := Seq("2.11.8", "2.12.0")
+
 lazy val buildSettings = Seq(
   organization := "com.propensive",
   scalaVersion := "2.11.8",

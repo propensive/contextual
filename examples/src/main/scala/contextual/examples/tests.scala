@@ -9,7 +9,7 @@ object Testing {
     
     val str = "some"
 
-    println(sjson"""{ "foo$str" : "$str } """)
+    println(sjson"""{ "foo$str" : $str } """)
   }
 }
 
