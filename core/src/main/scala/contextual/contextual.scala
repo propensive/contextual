@@ -190,6 +190,7 @@ object Macros {
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
           case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
+          case typ: Type => Set(typ)
         }
         
         Hole[(C, C)](types.map { t => (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1))) })
