@@ -1,45 +1,44 @@
 package contextual.dsls
 
 import contextual._
-import scala.reflect.macros.whitebox
 
 object binary {
 
-  case class Binary(data: Array[Byte]) extends AnyVal
-
   object BinParser extends Interpolator {
     type Ctx = Context.NoContext
-    type Inputs = Array[Byte]
 
-    def compile[P: c.WeakTypeTag](c: whitebox.Context)(literals: Seq[String], parameters: Seq[c.Tree], holes: Seq[Hole[(Ctx, Ctx)]]): c.Tree = {
-      import c.universe._
+    def implementation(contextual: Contextual): contextual.Implementation = {
+      import contextual.universe.{Literal => _, _}
 
-      if(literals.size > 1) throw InterpolationError(0, literals.head.size, "can't substitute")
+      val bytes = contextual.parts.map {
+        case Literal(index, lit) =>
+          lit.zipWithIndex.map { case (ch, idx) =>
+            if(ch != '0' && ch != '1') throw InterpolationError(index, idx, "bad binary")
+          }
 
-      literals.zipWithIndex.foreach { case (lit, idx) =>
-        lit.zipWithIndex.foreach { case (ch, idx2) =>
-          if(!List('1', '0').contains(ch)) throw InterpolationError(idx, idx2, "bad binary")
-        }
-      }
+          if(lit.length%8 != 0) throw InterpolationError(index, 0, "binary size is not an exact number of bytes")
 
-      if(literals.head.size%8 != 0) throw InterpolationError(0, 0, "binary size is not an exact number of bytes")
+          lit.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map { case (byte, idx) =>
+            q"array($idx) = $byte"
+          }
 
-      val bytes = literals.head.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map { case (b, i) =>
-        q"a($i) = $b"
-      }
+        case hole@Hole(_) =>
+          throw InterpolationError(0, contextual.literals.head.size, "can't substitute")
+      }.flatten
+
       val size = bytes.size
-      q"""{
-        val a = new Array[Byte]($size)
+      
+      contextual.Implementation(q"""{
+        val array = new Array[Byte]($size)
         ..$bytes
 
-        a
-      }"""
+        array
+      }""")
     }
-
   }
 
   implicit class BinaryStringContext(sc: StringContext) {
-    val bin = Prefix.simple(BinParser, sc)
+    val bin = Prefix(BinParser, sc)
   }
 
 }

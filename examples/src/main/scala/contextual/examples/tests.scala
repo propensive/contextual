@@ -1,7 +1,6 @@
 package contextual.examples
 
 import contextual._
-import dsls.sjson._
 
 object Testing {
   
@@ -9,7 +8,6 @@ object Testing {
     
     val str = "some"
 
-    println(sjson"""{ "foo$str" : $str } """)
   }
 }
 
