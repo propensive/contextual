@@ -1,4 +1,4 @@
-package contextual.dsls
+package contextual.examples
 
 import contextual._
 
@@ -12,7 +12,7 @@ object regex {
     def implementation(ctx: Contextual): ctx.Implementation = {
       import ctx.universe._
 
-      if(ctx.literals.size > 1) throw InterpolationError(0, ctx.literals.head.size, "can't substitute")
+      if(ctx.literals.size > 1) throw InterpolationError(0, ctx.literals.head.size, "substitution is not supported")
 
       try Pattern.compile(ctx.literals.head) catch {
         case p: PatternSyntaxException =>

@@ -36,15 +36,8 @@ abstract class Embedded[R, I <: Interpolator] {
 
 // FIXME: Do we need Simple and WithContext?
 object Prefix {
-  def apply[P <: Interpolator { type Ctx = Context.NoContext }](interpolator: P, stringContext: StringContext): Prefix[Context.NoContext, P] =
+  def apply(interpolator: Interpolator, stringContext: StringContext): Prefix[interpolator.Ctx, interpolator.type] =
     new Prefix(interpolator, stringContext.parts)
-
-  class WithContext[C <: Context] private[Prefix]() {
-    def apply[P <: Interpolator { type Ctx = C }](interpolator: P, stringContext: StringContext): Prefix[C, P] =
-      new Prefix(interpolator, stringContext.parts)
-  }
-
-  def withContext[C <: Context]: WithContext[C] = new WithContext()
 }
 
 class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P, parts: Seq[String]) {
@@ -180,7 +173,7 @@ trait Interpolator { interpolator =>
         }
       }
       
-      implicit def quasiquotes: Implementer[context.Tree] = new Implementer[context.Tree] {
+      implicit val quasiquotes: Implementer[context.Tree] = new Implementer[context.Tree] {
         def tree(expr: context.Tree): context.Tree = expr
       }
     }
@@ -198,6 +191,8 @@ trait Interpolator { interpolator =>
   }
 
   def implementation(contextual: Contextual): contextual.Implementation
+
+  def parse(string: String): Any = string
 
   class Embedding[I] protected[Interpolator] () {
     def apply[CC <: (Context, Context), R](cases: Case[CC, I, R]*): Handler[CC, I, R, interpolator.type] =
