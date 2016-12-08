@@ -4,6 +4,10 @@ import contextual._
 
 object shell {
 
+  case class Process(args: String*) {
+    override def toString = args.filter(!_.isEmpty).mkString("Process(", ", ", ")")
+  }
+
   sealed trait ShellContext extends Context
   case object InSingleQuotes extends ShellContext
   case object InDoubleQuotes extends ShellContext
@@ -47,7 +51,7 @@ object shell {
           }
 
         case ((params, state), hole@Hole(index, transitions)) =>
-          (params, transitions.get(state).getOrElse {
+          (state.toString :: params, transitions.get(state).getOrElse {
             hole.abort("can't handle this type here")
           })
       }
@@ -55,9 +59,9 @@ object shell {
       if(finalState == InSingleQuotes || finalState == InDoubleQuotes)
         ctx.parts.last match { case lit: Literal => lit.abort(lit.string.length, "unclosed quoted parameter") }
 
-      println(params.reverse)
+      val paramTokens = params.reverse.map { p => q"$p" }
 
-      ctx.Implementation("testing")
+      ctx.Implementation(q"_root_.contextual.examples.shell.Process(..$paramTokens)")
 
     }
 
