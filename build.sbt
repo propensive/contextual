@@ -8,26 +8,23 @@ lazy val buildSettings = Seq(
   scalaVersion := "2.11.8",
   name := "contextual",
   version := "1.0",
-  scalacOptions ++= Seq("-deprecation", "-feature")
+  scalacOptions ++= Seq("-deprecation", "-feature"),
+  scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
+    "scm:git:git@github.com:propensive/contextual.git"))
 )
-
-lazy val contextual = project
-  .in(file("."))
-  .settings(buildSettings: _*)
-  .settings(publishSettings: _*)
-  .settings(name := "contextual")
-  .dependsOn(core, dsls, examples)
 
 lazy val core = project
   .in(file("core"))
   .settings(buildSettings: _*)
+  .settings(publishSettings: _*)
   .settings(version := "1.0")
   .settings(libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value)
-  .settings(moduleName := "contextual-core")
+  .settings(moduleName := "contextual")
 
 lazy val dsls = project
   .in(file("dsls"))
   .settings(buildSettings: _*)
+  .settings(publishSettings: _*)
   .settings(moduleName := "contextual-dsls")
   .dependsOn(core)
 
