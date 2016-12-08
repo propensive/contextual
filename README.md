@@ -8,3 +8,6 @@ writing very ordinary user code: no macros.
 
 Please see the [co.ntextu.al](http://co.ntextu.al/) website for more information.
 
+
+
+[![Join the chat at https://gitter.im/propensive/contextual](https://badges.gitter.im/propensive/contextual.svg)](https://gitter.im/propensive/contextual?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
