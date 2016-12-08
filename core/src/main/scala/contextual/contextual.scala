@@ -82,15 +82,26 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
 trait Interpolator { interpolator =>
     
   sealed trait RuntimeParseToken[+I]
-  sealed trait CompileParseToken[+I]
-
-  case class Hole[C <: Context](input: Set[(C, C)]) extends CompileParseToken[(C, C)] {
-    override def toString: String = input.mkString("[", "|", "]")
+  sealed trait CompileParseToken[+I] {
+    def index: Int
   }
 
+  case class Hole[C <: Context](index: Int, input: Set[(C, C)]) extends
+      CompileParseToken[(C, C)] {
+    
+    override def toString: String = input.mkString("[", "|", "]")
+    
+    def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
+  }
+
+  /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
   case class Literal(index: Int, string: String) extends CompileParseToken[Nothing] with
       RuntimeParseToken[Nothing] {
+
     override def toString: String = string
+    
+    def abort(offset: Int, message: String): Nothing =
+      throw InterpolationError(index, offset, message)
   }
 
   case class Variable[+I](value: I) extends RuntimeParseToken[I] {
@@ -155,27 +166,39 @@ trait Interpolator { interpolator =>
   
   }
 
+  /** Returns an `Implementation` representing (in some form) the code that will be executed
+    * at runtime when evaluating an interpolated string. Typically, the implementation of this
+    * method will do additional checks based on the information known about the interpolated
+    * string at compile time, and will report any warnings or errors during compilation. */
   def implementation(contextual: Contextual): contextual.Implementation
 
   def parse(string: String): Any = string
 
   class Embedding[I] protected[Interpolator] () {
-    def apply[CC <: (Context, Context), R](cases: Case[CC, I, R]*):
+    def apply[CC <: (Context, Context), R](cases: Transition[CC, I, R]*):
         Handler[CC, I, R, interpolator.type] = new Handler(cases.to[List])
   }
 
   def embed[I]: Embedding[I] = new Embedding()
 }
 
-object transition {
-  def apply[C <: Context, C2 <: Context, V, R](context: C, after: C2)(fn: V => R):
-      Case[(C, C2), V, R] = Case(context, after, fn)
+/** Factory object for creating `Transitions`. */
+object Transition {
+  /** Creates a new `Transition` for instances of type `Value`, specifying the `context` in
+    * which that type may be substituted, and `after` context. */
+  def apply[Before <: Context, After <: Context, Value, Input](context: Before, after: After)
+      (fn: Value => Input): Transition[(Before, After), Value, Input] =
+    new Transition(context, after, fn)
 }
 
-case class Case[-CC <: (Context, Context), -V, +R](context: Context, after: Context, fn: V => R)
+/** A `Transition` specifies for a particular `Context` how a value of type `Value` should be
+  * converted into the appropriate `Input` type to an `Interpolator`, and how the application of
+  * the value should change the `Context` in the interpolated string. */
+class Transition[-CC <: (Context, Context), -Value, +Input](val context: Context,
+    val after: Context, val fn: Value => Input)
 
 class Handler[CC <: (Context, Context), V, R, I <: Interpolator](
-    val cases: List[Case[CC, V, R]]) {
+    val cases: List[Transition[CC, V, R]]) {
   
   def apply[C2](c: C2)(implicit ev: CC <:< (C2, Context)): V => R =
     cases.find(_.context == c).get.fn

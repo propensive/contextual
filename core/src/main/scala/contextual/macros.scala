@@ -46,8 +46,8 @@ object Macros {
       case e: Exception => c.abort(c.enclosingPosition, e.toString)
     }
 
-    val parameterTypes: Seq[interpolator.Hole[C]] = appliedParameters.map {
-      case Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _) =>
+    val parameterTypes: Seq[interpolator.Hole[C]] = appliedParameters.zipWithIndex.map {
+      case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
           case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
@@ -58,7 +58,7 @@ object Macros {
           (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
         }
         
-        interpolator.Hole[C](contextObjects)
+        interpolator.Hole[C](idx, contextObjects)
     }
 
     val combinedParts: List[interpolator.CompileParseToken[(C, C)]] =
@@ -78,13 +78,14 @@ object Macros {
 
     try interpolator.implementation(contextual).tree catch {
       case InterpolationError(part, offset, message) =>
-        val errorLiteral = astLiterals(part) match {
-          case lit@AstLiteral(Constant(str: String)) => lit
+        val (errorLiteral, length) = astLiterals(part) match {
+          case lit@AstLiteral(Constant(str: String)) => (lit, str.length)
         }
         
         /* Calculate the error position from the start of the corresponding literal part, plus
          * the offset. */
-        val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + offset)
+        val realOffset = if(offset < 0) length else (offset min length)
+        val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + realOffset)
       
         c.abort(errorPosition, message)
     }

@@ -9,21 +9,22 @@ object binary {
 
     def implementation(contextual: Contextual): contextual.Implementation = {
       import contextual.universe.{Literal => _, _}
-
+      
       val bytes = contextual.parts.map {
-        case Literal(index, lit) =>
-          lit.zipWithIndex.map { case (ch, idx) =>
-            if(ch != '0' && ch != '1') throw InterpolationError(index, idx, "bad binary")
+        case lit@Literal(index, string) =>
+          string.zipWithIndex.map { case (ch, idx) =>
+            if(ch != '0' && ch != '1') lit.abort(idx, "only '0' and '1' are valid")
           }
 
-          if(lit.length%8 != 0) throw InterpolationError(index, 0, "binary size is not an exact number of bytes")
+          if(string.length%8 != 0) lit.abort(0, "binary size is not an exact number of bytes")
 
-          lit.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map { case (byte, idx) =>
-            q"array($idx) = $byte"
+          string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
+            case (byte, idx) => q"array($idx) = $byte"
           }
 
-        case hole@Hole(_) =>
-          throw InterpolationError(0, contextual.literals.head.size, "can't substitute")
+        case hole@Hole(_, _) =>
+          hole.abort("can't make substitutions")
+      
       }.flatten
 
       val size = bytes.size
