@@ -10,13 +10,20 @@ object regex {
     type Ctx = Context.NoContext
 
     def implementation(ctx: Contextual): ctx.Implementation = {
-      import ctx.universe._
+      import ctx.universe.{Literal => _, _}
 
-      if(ctx.literals.size > 1) throw InterpolationError(0, ctx.literals.head.size, "substitution is not supported")
+      ctx.parts.foreach {
+        case lit@Literal(_, string) =>
+          try Pattern.compile(ctx.literals.head) catch {
+            case p: PatternSyntaxException =>
 
-      try Pattern.compile(ctx.literals.head) catch {
-        case p: PatternSyntaxException =>
-          throw InterpolationError(0, p.getIndex, p.getMessage)
+              // We take only the interesting part of the message
+              val message = p.getMessage.split(" near").head
+              lit.abort(p.getIndex, message)
+          }
+
+        case hole@Hole(_, _) =>
+          hole.abort("substitution is not supported")
       }
 
       ctx.Implementation(q"_root_.java.util.regex.Pattern.compile(${ctx.literals.head})")
