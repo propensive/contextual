@@ -62,7 +62,6 @@ object shell {
       val paramTokens = params.reverse.map { p => q"$p" }
 
       ctx.Implementation(q"_root_.contextual.examples.shell.Process(..$paramTokens)")
-
     }
 
   }
