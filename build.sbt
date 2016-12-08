@@ -7,7 +7,7 @@ lazy val buildSettings = Seq(
   organization := "com.propensive",
   scalaVersion := "2.11.8",
   name := "contextual",
-  version := "1.0",
+  version := "0.9",
   scalacOptions ++= Seq("-deprecation", "-feature"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
@@ -17,7 +17,6 @@ lazy val core = project
   .in(file("core"))
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
-  .settings(version := "1.0")
   .settings(libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value)
   .settings(moduleName := "contextual")
 
