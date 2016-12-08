@@ -17,7 +17,7 @@ lazy val core = project
   .in(file("core"))
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
-  .settings(libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value)
+  .settings(scalaMacroDependencies: _*)
   .settings(moduleName := "contextual")
 
 lazy val dsls = project
