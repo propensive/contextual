@@ -14,6 +14,7 @@ lazy val buildSettings = Seq(
 lazy val contextual = project
   .in(file("."))
   .settings(buildSettings: _*)
+  .settings(publishSettings: _*)
   .settings(name := "contextual")
   .dependsOn(core, dsls, examples)
 
