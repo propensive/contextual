@@ -7,19 +7,23 @@ object email {
 
   case class EmailAddress(address: String)
 
+  private val validEmail: Regex =
+    """^[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$""".r
+
   object EmailParser extends Interpolator {
     type Ctx = Context.NoContext
 
-    private val validEmail: Regex = """^[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$""".r
-
     def implementation(ctx: Contextual): ctx.Implementation = {
-      import ctx.universe._
-
-      if(ctx.literals.size > 1)
-        throw InterpolationError(0, ctx.literals.head.size, "substitutions are not supported")
       
-      if(validEmail.findFirstMatchIn(ctx.literals.head).isEmpty)
-        throw InterpolationError(0, 0, "this is not a valid email address")
+      ctx.parts.foreach {
+        
+        case lit@Literal(_, string) =>
+          if(validEmail.findFirstMatchIn(string).isEmpty)
+            lit.abort(0, "this is not a valid email address")
+      
+        case hole@Hole(_, _) =>
+          hole.abort("substitutions are not supported")
+      }
 
       ctx.Implementation(ctx.literals.head)
     }
@@ -28,8 +32,5 @@ object email {
 
   }
 
-  implicit class EmailStringContext(sc: StringContext) {
-    val regex = Prefix(EmailParser, sc)
-  }
-
+  implicit class EmailStringContext(sc: StringContext) { val email = Prefix(EmailParser, sc) }
 }

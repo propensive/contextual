@@ -10,11 +10,10 @@ object hex {
     def implementation(contextual: Contextual): contextual.Implementation = {
       import contextual.universe.{Literal => _, _}
 
-      val bytes = contextual.parts.map {
+      val bytes = contextual.parts.flatMap {
         case lit@Literal(index, string) =>
-          string.zipWithIndex.map { case (ch, idx) =>
-            if(!(ch >= 48 || ch <= 57) && !(ch >= 97 || ch <= 102))
-              lit.abort(idx, "bad hexadecimal")
+          string.zipWithIndex.foreach { case (ch, idx) =>
+            if(ch < 48 || (ch > 57 && ch < 97) || ch > 102) lit.abort(idx, "bad hexadecimal")
           }
 
           if(string.length%2 != 0) lit.abort(0,
@@ -27,7 +26,7 @@ object hex {
         case hole@Hole(_, _) =>
           hole.abort("substitutions are not supported")
       
-      }.flatten
+      }
 
       val size = bytes.size
       
@@ -40,8 +39,5 @@ object hex {
     }
   }
 
-  implicit class HexStringContext(sc: StringContext) {
-    val hex = Prefix(HexParser, sc)
-  }
-
+  implicit class HexStringContext(sc: StringContext) { val hex = Prefix(HexParser, sc) }
 }

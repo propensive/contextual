@@ -3,6 +3,7 @@ package contextual
 import scala.reflect._, macros.whitebox
 import language.experimental.macros
 
+/** Object containing the main macro providing Contextual's functionality. */
 object Macros {
   def contextual[C <: Context, P <: Interpolator { type Ctx = C }: c.WeakTypeTag]
       (c: whitebox.Context)(exprs: c.Tree*): c.Tree = {
@@ -46,7 +47,7 @@ object Macros {
       case e: Exception => c.abort(c.enclosingPosition, e.toString)
     }
 
-    val parameterTypes: Seq[interpolator.Hole[C]] = appliedParameters.zipWithIndex.map {
+    val parameterTypes: Seq[interpolator.Hole] = appliedParameters.zipWithIndex.map {
       case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
@@ -56,12 +57,12 @@ object Macros {
         
         val contextObjects = types.map { t =>
           (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
-        }
+        }.toMap
         
-        interpolator.Hole[C](idx, contextObjects)
+        interpolator.Hole(idx, contextObjects)
     }
 
-    val combinedParts: List[interpolator.CompileParseToken[(C, C)]] =
+    val combinedParts: List[interpolator.ParseToken] =
       interpolator.Literal(0, literals.head) :: List(
         parameterTypes.to[List],
         literals.to[List].tail.zipWithIndex.map { case (v, i) =>

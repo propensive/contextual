@@ -81,31 +81,28 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
   * interpolated string. */
 trait Interpolator { interpolator =>
     
-  sealed trait RuntimeParseToken[+I]
-  sealed trait CompileParseToken[+I] {
-    def index: Int
-  }
+  sealed trait ParseToken { def index: Int }
 
-  case class Hole[C <: Context](index: Int, input: Set[(C, C)]) extends
-      CompileParseToken[(C, C)] {
+  /** A `Hole` represents all that is known at compile-time about a substitution into an
+    * interpolated string. */
+  case class Hole(index: Int, input: Map[Ctx, Ctx]) extends ParseToken {
     
-    override def toString: String = input.mkString("[", "|", "]")
+    override def toString: String = input.keys.mkString("[", "|", "]")
     
+    /** Aborts compilation, positioning the caret at this hole in the interpolated string,
+      *  displaying the error message, `message`. */
     def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
   }
 
   /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
-  case class Literal(index: Int, string: String) extends CompileParseToken[Nothing] with
-      RuntimeParseToken[Nothing] {
+  case class Literal(index: Int, string: String) extends ParseToken {
 
     override def toString: String = string
     
+    /** Aborts compilation, positioning the caret at the `offset` into this literal part of the
+      * interpolated string, displaying the error message, `message`. */
     def abort(offset: Int, message: String): Nothing =
       throw InterpolationError(index, offset, message)
-  }
-
-  case class Variable[+I](value: I) extends RuntimeParseToken[I] {
-    override def toString: String = value.toString
   }
 
   type Ctx <: Context
@@ -116,9 +113,12 @@ trait Interpolator { interpolator =>
     * string; the constant parts which surround the variables parts that are substituted into
     * it. The `Contextual` type also provides details about these holes, specifically the
     * possible set of contexts in which the substituted value may be interpreted. */
-  abstract class Contextual(val literals: Seq[String], val holes: Seq[Hole[_]]) {
+  abstract class Contextual(val literals: Seq[String], val holes: Seq[Hole]) {
 
+    /** The macro context when expanding the `contextual` macro. */
     val context: whitebox.Context
+
+    /** The expressions that are substituted into the interpolated string. */
     def expressions: Seq[context.Tree]
     
     lazy val universe: context.universe.type = context.universe
@@ -150,13 +150,14 @@ trait Interpolator { interpolator =>
         def tree(expr: context.Tree): context.Tree = expr
       }
     }
-    
+   
+    /** An `Implementer` defines how a particular value should be converted into an AST tree
+      * for evaluation at runtime. */
     @implicitNotFound("cannot create an implementation based on the type ${T}")
-    trait Implementer[T] {
-      def tree(value: T): context.Tree
-    }
+    trait Implementer[T] { def tree(value: T): context.Tree }
 
-    def parts: Seq[CompileParseToken[_]] = {
+    /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
+    def parts: Seq[ParseToken] = {
       val head :: tail = literals.to[List].zipWithIndex.map { case (lit, idx) =>
         Literal(idx, lit)
       }
