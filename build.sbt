@@ -20,18 +20,18 @@ lazy val core = project
   .settings(scalaMacroDependencies: _*)
   .settings(moduleName := "contextual")
 
-lazy val dsls = project
-  .in(file("dsls"))
-  .settings(buildSettings: _*)
-  .settings(publishSettings: _*)
-  .settings(moduleName := "contextual-dsls")
-  .dependsOn(core)
-
 lazy val examples = project
   .in(file("examples"))
   .settings(buildSettings: _*)
+  .settings(publishSettings: _*)
   .settings(moduleName := "contextual-examples")
-  .dependsOn(core, dsls)
+  .dependsOn(core)
+
+lazy val tests = project
+  .in(file("tests"))
+  .settings(buildSettings: _*)
+  .settings(moduleName := "contextual-tests")
+  .dependsOn(core, examples)
 
 lazy val publishSettings = Seq(
   homepage := Some(url("http://co.ntextu.al/")),
@@ -71,16 +71,6 @@ lazy val publishSettings = Seq(
   ),
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value
-)
-lazy val noPublishSettings = Seq(
-  publish := (),
-  publishLocal := (),
-  publishArtifact := false
-)
-
-lazy val noSourceSettings = Seq(
-  sources in Compile := Seq(),
-  sources in Test := Seq()
 )
 
 import java.io.File
