@@ -1,6 +1,7 @@
 package contextual
 
 import scala.reflect._, macros.whitebox
+
 import language.experimental.macros
 
 /** Object containing the main macro providing Contextual's functionality. */
@@ -54,16 +55,16 @@ object Macros {
           case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
           case typ: Type => Set(typ)
         }
-        
+
         val contextObjects = types.map { t =>
           (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
         }.toMap
-        
+
         interpolator.Hole(idx, contextObjects)
     }
 
-    val combinedParts: List[interpolator.ParseToken] =
-      interpolator.Literal(0, literals.head) :: List(
+    val combinedParts: Seq[interpolator.StaticToken] =
+      interpolator.Literal(0, literals.head) +: Seq(
         parameterTypes.to[List],
         literals.to[List].tail.zipWithIndex.map { case (v, i) =>
           interpolator.Literal(i + 1, v)
@@ -72,7 +73,7 @@ object Macros {
 
 
     val contextual =
-      new interpolator.Contextual(literals, parameterTypes) {
+      new interpolator.Contextual[interpolator.StaticToken](literals, parameterTypes) {
         val context: c.type = c
         def expressions = exprs
       }
@@ -82,12 +83,12 @@ object Macros {
         val (errorLiteral, length) = astLiterals(part) match {
           case lit@AstLiteral(Constant(str: String)) => (lit, str.length)
         }
-        
+
         /* Calculate the error position from the start of the corresponding literal part, plus
          * the offset. */
         val realOffset = if(offset < 0) length else (offset min length)
         val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + realOffset)
-      
+
         c.abort(errorPosition, message)
     }
   }

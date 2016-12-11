@@ -7,7 +7,7 @@ object binary {
   object BinParser extends Interpolator {
     type Ctx = Context.NoContext
 
-    def implementation(ctx: Contextual): ctx.Implementation = {
+    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
       import ctx.universe.{Literal => _, _}
       
       val bytes = ctx.parts.flatMap {

@@ -79,41 +79,14 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
 
 /** An `Interpolator` defines the compile-time and runtime behavior when interpreting an
   * interpolated string. */
-trait Interpolator { interpolator =>
+trait Interpolator extends ParseTokens { interpolator =>
     
-  sealed trait ParseToken { def index: Int }
-
-  /** A `Hole` represents all that is known at compile-time about a substitution into an
-    * interpolated string. */
-  case class Hole(index: Int, input: Map[Ctx, Ctx]) extends ParseToken {
-    
-    override def toString: String = input.keys.mkString("[", "|", "]")
-    
-    /** Aborts compilation, positioning the caret at this hole in the interpolated string,
-      *  displaying the error message, `message`. */
-    def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
-  }
-
-  /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
-  case class Literal(index: Int, string: String) extends ParseToken {
-
-    override def toString: String = string
-    
-    /** Aborts compilation, positioning the caret at the `offset` into this literal part of the
-      * interpolated string, displaying the error message, `message`. */
-    def abort(offset: Int, message: String): Nothing =
-      throw InterpolationError(index, offset, message)
-  }
-
-  type Ctx <: Context
-  type Inputs  
-
   /** The `Contextual` type is a representation of the known compile-time information about an
     * interpolated string. Most importantly, this includes the literal parts of the interpolated
     * string; the constant parts which surround the variables parts that are substituted into
     * it. The `Contextual` type also provides details about these holes, specifically the
     * possible set of contexts in which the substituted value may be interpreted. */
-  abstract class Contextual(val literals: Seq[String], val holes: Seq[Hole]) {
+  abstract class Contextual[Tokens >: Literal <: ParseToken](val literals: Seq[String], val holes: Seq[Tokens]) { // FIXME - rename holes
 
     /** The macro context when expanding the `contextual` macro. */
     val context: whitebox.Context
@@ -129,6 +102,67 @@ trait Interpolator { interpolator =>
         def value: Type = v
         def implementer: Implementer[Type] = implicitly[Implementer[Type]]
       }
+    }
+
+    def runtimeEval(contexts: Seq[Ctx]): Implementation = new Implementation {
+      type Type = context.Tree
+      
+      def value: context.Tree = {
+        import context.universe.{Literal => _, _}
+
+        val literalTokenTrees: Seq[context.Tree] = literals.zipWithIndex.map {
+          case (lit, idx) => q"_root_.contextual.Literal($idx, $lit)"
+        }
+
+        val literalTokens: Seq[Literal] = literals.zipWithIndex.map {
+          case (lit, idx) => Literal(idx, lit)
+        }
+
+        /*val contextTypes = contexts(context)(literalTokens, holes).zip(holes).zip(parameters).map { case ((ctx, hole), param) =>
+          val className = ctx.getClass.getName
+        
+          val errorMsg = s"expected a value suitable for context ${className.dropRight(1)}"
+
+          if(!hole.input.exists(_._1 == ctx)) c.error(param.pos, errorMsg)
+
+          val classInstance = q"_root_.java.lang.Class.forName($className)"
+          q"""$classInstance.getField("MODULE$$").get($classInstance) match {
+            case c: _root_.contextual.Context => c
+          }
+          """
+        }*/
+
+        //val parameterTokens = parameters.zip(contexts).map { case (param, ctx) =>
+        //  q"_root_.contextual.Substitution(${param}($ctx))"
+        //}
+
+        //val tokens = literalTokenTrees.head +: Seq(parameterTokens, literalTokenTrees.tail).transpose.flatten
+
+        val className = this.getClass.getName
+
+        println(s"className = $className")
+
+        val classInstance = q"_root_.java.lang.Class.forName($className)"
+        
+        val materializedInterpolator =
+          q"""$classInstance.getField("MODULE$$").get($classInstance) match {
+            case c: _root_.contextual.Context => c
+          }
+          """
+
+        val substitutions = contexts.zipWithIndex.map { case (ctx, idx) =>
+          q"$materializedInterpolator.Substitution()"
+        }
+
+        q"""$materializedInterpolator.eval(
+          new $materializedInterpolator.Contextual(
+            _root_.scala.collection.Seq(..$literals),
+            _root_.scala.collection.Seq(..$substitutions)
+          )
+        )"""
+      }
+      
+      def implementer = Implementer.quasiquotes
     }
 
     trait Implementation {
@@ -157,12 +191,14 @@ trait Interpolator { interpolator =>
     trait Implementer[T] { def tree(value: T): context.Tree }
 
     /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
-    def parts: Seq[ParseToken] = {
-      val head :: tail = literals.to[List].zipWithIndex.map { case (lit, idx) =>
+    def parts: Seq[Tokens] = {
+      val head +: tail = literals.zipWithIndex.map { case (lit, idx) =>
         Literal(idx, lit)
       }
-      
-      head :: List(holes, tail).transpose.flatten
+     
+      val hs: Seq[Tokens] = tail //holes
+
+      head +: Seq(holes, tail).transpose.flatten
     }
   
   }
@@ -171,13 +207,13 @@ trait Interpolator { interpolator =>
     * at runtime when evaluating an interpolated string. Typically, the implementation of this
     * method will do additional checks based on the information known about the interpolated
     * string at compile time, and will report any warnings or errors during compilation. */
-  def implementation(contextual: Contextual): contextual.Implementation
+  def implementation(contextual: Contextual[StaticToken]): contextual.Implementation
 
   def parse(string: String): Any = string
 
   class Embedding[I] protected[Interpolator] () {
     def apply[CC <: (Context, Context), R](cases: Transition[CC, I, R]*):
-        Handler[CC, I, R, interpolator.type] = new Handler(cases.to[List])
+        Handler[CC, I, R, interpolator.type] = new Handler(cases)
   }
 
   def embed[I]: Embedding[I] = new Embedding()
@@ -199,8 +235,49 @@ class Transition[-CC <: (Context, Context), -Value, +Input](val context: Context
     val after: Context, val fn: Value => Input)
 
 class Handler[CC <: (Context, Context), V, R, I <: Interpolator](
-    val cases: List[Transition[CC, V, R]]) {
+    val cases: Seq[Transition[CC, V, R]]) {
   
   def apply[C2](c: C2)(implicit ev: CC <:< (C2, Context)): V => R =
     cases.find(_.context == c).get.fn
 }
+
+trait ParseTokens {
+
+  type Ctx <: Context
+  type Inputs  
+
+  sealed trait ParseToken extends Product with Serializable
+  
+  sealed trait StaticToken extends ParseToken with Product with Serializable { def index: Int }
+
+  sealed trait RuntimeToken extends ParseToken with Product with Serializable { def index: Int }
+
+  /** A `Hole` represents all that is known at compile-time about a substitution into an
+    * interpolated string. */
+  case class Hole(index: Int, input: Map[Ctx, Ctx]) extends StaticToken {
+    
+    override def toString: String = input.keys.mkString("[", "|", "]")
+    
+    def apply(ctx: Ctx): Ctx =
+      input.get(ctx).getOrElse(abort(
+          "values of this type cannot be substituted in this position"))
+
+    /** Aborts compilation, positioning the caret at this hole in the interpolated string,
+      *  displaying the error message, `message`. */
+    def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
+  }
+
+  case class Substitution(index: Int, val value: Inputs) extends RuntimeToken
+
+  /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
+  case class Literal(index: Int, string: String) extends StaticToken with RuntimeToken {
+
+    override def toString: String = string
+    
+    /** Aborts compilation, positioning the caret at the `offset` into this literal part of the
+      * interpolated string, displaying the error message, `message`. */
+    def abort(offset: Int, message: String) =
+      throw InterpolationError(index, offset, message)
+  }
+}
+

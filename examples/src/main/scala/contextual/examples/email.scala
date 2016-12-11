@@ -13,7 +13,7 @@ object email {
   object EmailParser extends Interpolator {
     type Ctx = Context.NoContext
 
-    def implementation(ctx: Contextual): ctx.Implementation = {
+    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
       
       ctx.parts.foreach {
         

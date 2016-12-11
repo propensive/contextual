@@ -18,50 +18,52 @@ object shell {
     type Ctx = ShellContext
     type Inputs = String
 
-    def implementation(ctx: Contextual): ctx.Implementation = {
+    def eval(contexts: Contextual[RuntimeToken]): Process = {
+      
+      Process("foobar")
+    }
+
+    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
       import ctx.universe.{Literal => _, _}
 
-      val (params, finalState) = ctx.parts.foldLeft(("" :: Nil, NewParam: ShellContext)) {
-        case ((params, state), lit@Literal(_, string)) =>
-          string.foldLeft((params, state)) {
+      val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
+        case ((contexts, state), lit@Literal(_, string)) =>
+          (contexts, string.foldLeft(state) {
             
-            case ((params, NewParam), ' ') =>
-              (params, NewParam)
+            case (NewParam, ' ') =>
+              NewParam
             
-            case ((params, InUnquotedParam), ' ') =>
-              ("" :: params, NewParam)
+            case (InUnquotedParam, ' ') =>
+              NewParam
             
-            case ((params, InSingleQuotes), '\'') =>
-              (params, InUnquotedParam)
+            case (InSingleQuotes, '\'') =>
+              InUnquotedParam
             
-            case ((params, InDoubleQuotes), '"') =>
-              (params, InUnquotedParam)
+            case (InDoubleQuotes, '"') =>
+              InUnquotedParam
             
-            case ((params, InUnquotedParam | NewParam), '"') =>
-              (params, InDoubleQuotes)
+            case (InUnquotedParam | NewParam, '"') =>
+              InDoubleQuotes
             
-            case ((current :: done, InUnquotedParam | NewParam), '\'') =>
-              (current :: done, InSingleQuotes)
+            case (InUnquotedParam | NewParam, '\'') =>
+              InSingleQuotes
            
-            case ((current :: done, NewParam), ch) =>
-              ((current+ch) :: done, InUnquotedParam)
+            case (NewParam, ch) =>
+              InUnquotedParam
             
-            case ((current :: done, state), ch) =>
-              (current+ch :: done, state)
-          }
-
-        case ((params, state), hole@Hole(index, transitions)) =>
-          (state.toString :: params, transitions.get(state).getOrElse {
-            hole.abort("can't handle this type here")
+            case (state, ch) =>
+              state
           })
+
+        case ((contexts, state), hole@Hole(_, _)) =>
+          val newState = hole(state)
+          (newState :: contexts, newState)
       }
 
       if(finalState == InSingleQuotes || finalState == InDoubleQuotes)
         ctx.parts.last match { case lit: Literal => lit.abort(lit.string.length, "unclosed quoted parameter") }
 
-      val paramTokens = params.reverse.map { p => q"$p" }
-
-      ctx.Implementation(q"_root_.contextual.examples.shell.Process(..$paramTokens)")
+      ctx.runtimeEval(contexts)
     }
 
   }

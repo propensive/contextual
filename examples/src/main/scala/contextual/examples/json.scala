@@ -13,7 +13,7 @@ object json {
   object JsonParser extends Interpolator {
     type Ctx = JsonContext
 
-    def implementation(ctx: Contextual): ctx.Implementation = {
+    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
       var i = 0
       var n = 0
 
