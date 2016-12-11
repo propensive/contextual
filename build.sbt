@@ -30,6 +30,7 @@ lazy val examples = project
 lazy val tests = project
   .in(file("tests"))
   .settings(buildSettings: _*)
+  .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
   .dependsOn(core, examples)
 
@@ -71,6 +72,12 @@ lazy val publishSettings = Seq(
   ),
   releaseCrossBuild := true,
   releasePublishArtifactsAction := PgpKeys.publishSigned.value
+)
+
+lazy val noPublishSettings = Seq(
+  publish := (),
+  publishLocal := (),
+  publishArtifact := false
 )
 
 import java.io.File
