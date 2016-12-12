@@ -25,7 +25,7 @@ object regex {
           hole.abort("substitution is not supported")
       }
 
-      ctx.evaluate(contexts = Nil)
+      ctx.doEvaluation(contexts = Nil)
     }
 
     def evaluate(ctx: Contextual[RuntimePart]): Pattern = Pattern.compile(ctx.parts.mkString)

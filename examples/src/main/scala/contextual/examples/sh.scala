@@ -42,7 +42,7 @@ object shell {
         lit.abort(lit.string.length, "unclosed quoted parameter")
       }
 
-      ctx.evaluate(contexts)
+      ctx.doEvaluation(contexts)
     }
 
     private def parseLiteral(state: Ctx, string: String): (Ctx, List[String]) =

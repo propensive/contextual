@@ -23,7 +23,7 @@ object email {
           hole.abort("substitutions are not supported")
       }
 
-      ctx.evaluate(contexts = Nil)
+      ctx.doEvaluation(contexts = Nil)
     }
 
     def evaluate(contextual: Contextual[RuntimePart]): EmailAddress =

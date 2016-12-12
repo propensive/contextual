@@ -103,7 +103,7 @@ trait Interpolator extends ContextualParts { interpolator =>
       }
     }
 
-    def evaluate(contexts: Seq[Ctx]): Implementation = new Implementation {
+    def doEvaluation(contexts: Seq[Ctx]): Implementation = new Implementation {
       type Type = context.Tree
       
       def value: context.Tree = {
