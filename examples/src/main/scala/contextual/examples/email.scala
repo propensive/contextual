@@ -12,7 +12,7 @@ object email {
 
   object EmailParser extends Interpolator {
 
-    def implementation(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
       
       ctx.parts.foreach {
         case lit@Literal(_, string) =>
@@ -23,10 +23,10 @@ object email {
           hole.abort("substitutions are not supported")
       }
 
-      ctx.runtimeEval(contexts = Nil)
+      ctx.evaluate(contexts = Nil)
     }
 
-    def eval(contextual: Contextual[RuntimePart]): EmailAddress =
+    def evaluate(contextual: Contextual[RuntimePart]): EmailAddress =
       EmailAddress(contextual.parts.mkString)
 
   }

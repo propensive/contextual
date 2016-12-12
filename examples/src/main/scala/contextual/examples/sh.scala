@@ -18,13 +18,13 @@ object shell {
     type Ctx = ShellContext
     type Inputs = String
 
-    def eval(ctx: Contextual[RuntimePart]): Process = {
+    def evaluate(ctx: Contextual[RuntimePart]): Process = {
       val command = ctx.parts.mkString
       val (_, params) = parseLiteral(NewParam, command)
       Process(params: _*)
     }
 
-    def implementation(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
       import ctx.universe.{Literal => _, _}
 
       val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
@@ -42,7 +42,7 @@ object shell {
         lit.abort(lit.string.length, "unclosed quoted parameter")
       }
 
-      ctx.runtimeEval(contexts)
+      ctx.evaluate(contexts)
     }
 
     private def parseLiteral(state: Ctx, string: String): (Ctx, List[String]) =

@@ -103,7 +103,7 @@ trait Interpolator extends ContextualParts { interpolator =>
       }
     }
 
-    def runtimeEval(contexts: Seq[Ctx]): Implementation = new Implementation {
+    def evaluate(contexts: Seq[Ctx]): Implementation = new Implementation {
       type Type = context.Tree
       
       def value: context.Tree = {
@@ -134,7 +134,7 @@ trait Interpolator extends ContextualParts { interpolator =>
             q"$interpolator.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
         }
 
-        q"""$interpolator.eval(
+        q"""$interpolator.evaluate(
           new $interpolator.Contextual[$interpolator.RuntimePart](
             _root_.scala.collection.Seq(..$literals),
             _root_.scala.collection.Seq(..$substitutions)
@@ -185,7 +185,7 @@ trait Interpolator extends ContextualParts { interpolator =>
     * at runtime when evaluating an interpolated string. Typically, the implementation of this
     * method will do additional checks based on the information known about the interpolated
     * string at compile time, and will report any warnings or errors during compilation. */
-  def implementation(contextual: Contextual[StaticPart]): contextual.Implementation
+  def implement(contextual: Contextual[StaticPart]): contextual.Implementation
 
   def parse(string: String): Any = string
 

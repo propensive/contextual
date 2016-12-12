@@ -6,7 +6,7 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    def implementation(contextual: Contextual[StaticPart]): contextual.Implementation = {
+    def implement(contextual: Contextual[StaticPart]): contextual.Implementation = {
       import contextual.universe.{Literal => _, _}
 
       val bytes = contextual.parts.flatMap {

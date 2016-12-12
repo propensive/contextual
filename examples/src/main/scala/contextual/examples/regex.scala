@@ -8,7 +8,7 @@ object regex {
 
   object RegexParser extends Interpolator {
 
-    def implementation(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
       import ctx.universe.{Literal => _, _}
 
       ctx.parts.foreach {
@@ -25,10 +25,10 @@ object regex {
           hole.abort("substitution is not supported")
       }
 
-      ctx.runtimeEval(contexts = Nil)
+      ctx.evaluate(contexts = Nil)
     }
 
-    def eval(ctx: Contextual[RuntimePart]): Pattern = Pattern.compile(ctx.parts.mkString)
+    def evaluate(ctx: Contextual[RuntimePart]): Pattern = Pattern.compile(ctx.parts.mkString)
 
   }
 
