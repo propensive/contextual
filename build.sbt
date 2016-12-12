@@ -7,7 +7,7 @@ lazy val buildSettings = Seq(
   organization := "com.propensive",
   scalaVersion := "2.11.8",
   name := "contextual",
-  version := "0.9",
+  version := "0.12",
   scalacOptions ++= Seq("-deprecation", "-feature"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
