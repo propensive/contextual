@@ -11,12 +11,10 @@ object email {
     """^[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$""".r
 
   object EmailParser extends Interpolator {
-    type Ctx = Context.NoContext
 
-    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
+    def implementation(ctx: Contextual[StaticPart]): ctx.Implementation = {
       
       ctx.parts.foreach {
-        
         case lit@Literal(_, string) =>
           if(validEmail.findFirstMatchIn(string).isEmpty)
             lit.abort(0, "this is not a valid email address")
@@ -25,10 +23,11 @@ object email {
           hole.abort("substitutions are not supported")
       }
 
-      ctx.Implementation(ctx.literals.head)
+      ctx.runtimeEval(contexts = Nil)
     }
 
-    override def parse(string: String): EmailAddress = EmailAddress(string)
+    def eval(contextual: Contextual[RuntimePart]): EmailAddress =
+      EmailAddress(contextual.parts.mkString)
 
   }
 

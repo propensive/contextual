@@ -6,7 +6,7 @@ import language.experimental.macros
 
 /** Object containing the main macro providing Contextual's functionality. */
 object Macros {
-  def contextual[C <: Context, P <: Interpolator { type Ctx = C }: c.WeakTypeTag]
+  def contextual[C <: Context, I <: Interpolator { type Ctx = C }: c.WeakTypeTag]
       (c: whitebox.Context)(exprs: c.Tree*): c.Tree = {
     
     import c.universe.{Literal => AstLiteral, _}
@@ -36,15 +36,14 @@ object Macros {
       val typeName = javaClassName(tpe.typeSymbol)
       val cls = Class.forName(s"$typeName$$")
       
-      cls.getField("MODULE$").get(cls).asInstanceOf[M]
+      /* It would be nice to avoid the unchecked pattern-match. */
+      cls.getField("MODULE$").get(cls) match { case cls: M => cls }
     }
 
-    val interpolatorName = javaClassName(weakTypeOf[P].typeSymbol)
+    val interpolatorName = javaClassName(weakTypeOf[I].typeSymbol)
     
     /* Get an instance of the Interpolator class. */
-    val interpolator = try {
-      getModule[P](weakTypeOf[P])
-    } catch {
+    val interpolator = try getModule[I](weakTypeOf[I]) catch {
       case e: Exception => c.abort(c.enclosingPosition, e.toString)
     }
 
@@ -63,7 +62,7 @@ object Macros {
         interpolator.Hole(idx, contextObjects)
     }
 
-    val combinedParts: Seq[interpolator.StaticToken] =
+    val combinedParts: Seq[interpolator.StaticPart] =
       interpolator.Literal(0, literals.head) +: Seq(
         parameterTypes.to[List],
         literals.to[List].tail.zipWithIndex.map { case (v, i) =>
@@ -72,13 +71,14 @@ object Macros {
       ).transpose.flatten
 
 
-    val contextual =
-      new interpolator.Contextual[interpolator.StaticToken](literals, parameterTypes) {
-        val context: c.type = c
-        def expressions = exprs
+    val contextualValue =
+      new interpolator.Contextual[interpolator.StaticPart](literals, parameterTypes) {
+        override val context: c.type = c
+        override def expressions = exprs
+        override val interpolatorTerm = Some(weakTypeOf[I].termSymbol)
       }
 
-    try interpolator.implementation(contextual).tree catch {
+    try interpolator.implementation(contextualValue).tree catch {
       case InterpolationError(part, offset, message) =>
         val (errorLiteral, length) = astLiterals(part) match {
           case lit@AstLiteral(Constant(str: String)) => (lit, str.length)

@@ -5,9 +5,8 @@ import contextual._
 object hex {
 
   object HexParser extends Interpolator {
-    type Ctx = Context.NoContext
 
-    def implementation(contextual: Contextual[StaticToken]): contextual.Implementation = {
+    def implementation(contextual: Contextual[StaticPart]): contextual.Implementation = {
       import contextual.universe.{Literal => _, _}
 
       val bytes = contextual.parts.flatMap {
@@ -17,7 +16,7 @@ object hex {
           }
 
           if(string.length%2 != 0) lit.abort(0,
-                "hexadecimal size is not an exact number of bytes")
+              "hexadecimal size is not an exact number of bytes")
 
           string.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"

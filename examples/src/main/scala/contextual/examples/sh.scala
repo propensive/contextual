@@ -18,58 +18,63 @@ object shell {
     type Ctx = ShellContext
     type Inputs = String
 
-    def eval(contexts: Contextual[RuntimeToken]): Process = {
-      
-      Process("foobar")
+    def eval(ctx: Contextual[RuntimePart]): Process = {
+      val command = ctx.parts.mkString
+      val (_, params) = parseLiteral(NewParam, command)
+      Process(params: _*)
     }
 
-    def implementation(ctx: Contextual[StaticToken]): ctx.Implementation = {
+    def implementation(ctx: Contextual[StaticPart]): ctx.Implementation = {
       import ctx.universe.{Literal => _, _}
 
       val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
         case ((contexts, state), lit@Literal(_, string)) =>
-          (contexts, string.foldLeft(state) {
-            
-            case (NewParam, ' ') =>
-              NewParam
-            
-            case (InUnquotedParam, ' ') =>
-              NewParam
-            
-            case (InSingleQuotes, '\'') =>
-              InUnquotedParam
-            
-            case (InDoubleQuotes, '"') =>
-              InUnquotedParam
-            
-            case (InUnquotedParam | NewParam, '"') =>
-              InDoubleQuotes
-            
-            case (InUnquotedParam | NewParam, '\'') =>
-              InSingleQuotes
-           
-            case (NewParam, ch) =>
-              InUnquotedParam
-            
-            case (state, ch) =>
-              state
-          })
+          val (newState, _) = parseLiteral(state, string)
+          (contexts, newState)
 
         case ((contexts, state), hole@Hole(_, _)) =>
           val newState = hole(state)
           (newState :: contexts, newState)
       }
 
-      if(finalState == InSingleQuotes || finalState == InDoubleQuotes)
-        ctx.parts.last match { case lit: Literal => lit.abort(lit.string.length, "unclosed quoted parameter") }
+      if(finalState == InSingleQuotes || finalState == InDoubleQuotes) {
+        val lit@Literal(_, _) = ctx.parts.last
+        lit.abort(lit.string.length, "unclosed quoted parameter")
+      }
 
       ctx.runtimeEval(contexts)
     }
 
-  }
+    private def parseLiteral(state: Ctx, string: String): (Ctx, List[String]) =
+      string.foldLeft((state, List[String](""))) {
+        case ((NewParam, params), ' ') =>
+          (NewParam, params)
+        
+        case ((InUnquotedParam, params), ' ') =>
+          (NewParam, params :+ "")
+        
+        case ((InSingleQuotes, params), '\'') =>
+          (InUnquotedParam, params)
+        
+        case ((InDoubleQuotes, params), '"') =>
+          (InUnquotedParam, params)
+        
+        case ((InUnquotedParam | NewParam, params), '"') =>
+          (InDoubleQuotes, params)
+        
+        case ((InUnquotedParam | NewParam, params), '\'') =>
+          (InSingleQuotes, params)
+        
+        case ((NewParam, params), ch) =>
+          (InUnquotedParam, params :+ s"$ch")
+        
+        case ((state, rest :+ cur), ch) =>
+          (state, rest :+ s"$cur$ch")
+      }
+    }
 
   implicit val embedStrings = ShellInterpolator.embed[String](
-    Transition(NewParam, InUnquotedParam)(identity),
+    Transition(NewParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
     Transition(InUnquotedParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
     Transition(InSingleQuotes, InSingleQuotes) { s => s.replaceAll("'", """'"'"'""") },
     Transition(InDoubleQuotes, InDoubleQuotes) { s => s.replaceAll("\\\"", "\\\\\"") }
