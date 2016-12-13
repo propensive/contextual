@@ -20,7 +20,7 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    def implement(contextual: Contextual[StaticPart]): Seq[Ctx] = Nil
+    def contextualize(contextual: Contextual[StaticPart]): Seq[Ctx] = Nil
     
     override def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]) = {
       import contextual.universe.{Literal => _, _}

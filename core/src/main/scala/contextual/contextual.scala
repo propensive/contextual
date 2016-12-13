@@ -86,11 +86,9 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
   
   }
 
-  /** Returns an `Implementation` representing (in some form) the code that will be executed
-    * at runtime when evaluating an interpolated string. Typically, the implementation of this
-    * method will do additional checks based on the information known about the interpolated
-    * string at compile time, and will report any warnings or errors during compilation. */
-  def implement(contextual: Contextual[StaticPart]): Seq[Ctx]
+  /** Validates the interpolated string, and returns a sequence of contexts for each hole in the
+    * string. */
+  def contextualize(contextual: Contextual[StaticPart]): Seq[Ctx]
 
   /** The macro evaluator that defines what code will be generated for this `Interpolator`. The
     * default implementation constructs a new runtime `Contextual` object, and invokes the

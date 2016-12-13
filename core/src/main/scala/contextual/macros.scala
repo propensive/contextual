@@ -92,7 +92,7 @@ object Macros {
         override val interpolatorTerm = Some(weakTypeOf[I].termSymbol)
       }
 
-    val contexts = try interpolator.implement(contextualValue) catch {
+    val contexts = try interpolator.contextualize(contextualValue) catch {
       case InterpolationError(part, offset, message) =>
         val (errorLiteral, length) = astLiterals(part) match {
           case lit@AstLiteral(Constant(str: String)) => (lit, str.length)

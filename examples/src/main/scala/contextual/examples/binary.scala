@@ -20,7 +20,7 @@ object binary {
 
   object BinParser extends Interpolator {
 
-    def implement(ctx: Contextual[StaticPart]) = Nil
+    def contextualize(ctx: Contextual[StaticPart]) = Nil
 
     override def evaluator(contexts: Seq[Ctx], ctx: Contextual[StaticPart]) = {
       import ctx.universe.{Literal => _, _}

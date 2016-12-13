@@ -38,7 +38,7 @@ object shell {
       Process(params: _*)
     }
 
-    def implement(ctx: Contextual[StaticPart]): Seq[Ctx] = {
+    def contextualize(ctx: Contextual[StaticPart]): Seq[Ctx] = {
       import ctx.universe.{Literal => _, _}
 
       val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
