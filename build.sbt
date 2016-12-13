@@ -1,14 +1,13 @@
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import ReleaseTransformations._
 
-crossScalaVersions := Seq("2.11.8", "2.12.0")
-
 lazy val buildSettings = Seq(
   organization := "com.propensive",
   scalaVersion := "2.11.8",
   name := "contextual",
   version := "0.12",
   scalacOptions ++= Seq("-deprecation", "-feature"),
+  crossScalaVersions := Seq("2.11.8", "2.12.0"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
 )
