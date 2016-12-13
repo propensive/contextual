@@ -1,17 +1,6 @@
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import ReleaseTransformations._
 
-lazy val buildSettings = Seq(
-  organization := "com.propensive",
-  scalaVersion := "2.11.8",
-  name := "contextual",
-  version := "0.14",
-  scalacOptions ++= Seq("-deprecation", "-feature"),
-  crossScalaVersions := Seq("2.12.1", "2.11.8"),
-  scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
-    "scm:git:git@github.com:propensive/contextual.git"))
-)
-
 lazy val core = project
   .in(file("core"))
   .settings(buildSettings: _*)
@@ -31,7 +20,18 @@ lazy val tests = project
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
-  .dependsOn(core, examples)
+  .dependsOn(examples)
+
+lazy val buildSettings = Seq(
+  organization := "com.propensive",
+  scalaVersion := "2.12.1",
+  name := "contextual",
+  version := "0.14",
+  scalacOptions ++= Seq("-deprecation", "-feature"),
+  crossScalaVersions := Seq("2.11.8", "2.12.1"),
+  scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
+    "scm:git:git@github.com:propensive/contextual.git"))
+)
 
 lazy val publishSettings = Seq(
   homepage := Some(url("http://co.ntextu.al/")),
