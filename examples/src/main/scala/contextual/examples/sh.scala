@@ -38,7 +38,7 @@ object shell {
       Process(params: _*)
     }
 
-    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]): Seq[Ctx] = {
       import ctx.universe.{Literal => _, _}
 
       val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
@@ -56,7 +56,7 @@ object shell {
         lit.abort(lit.string.length, "unclosed quoted parameter")
       }
 
-      ctx.doEvaluation(contexts)
+      contexts
     }
 
     private def parseLiteral(state: Ctx, string: String): (Ctx, List[String]) =

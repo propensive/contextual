@@ -75,81 +75,6 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     
     def interpolatorTerm: Option[context.Symbol] = None
 
-    object Implementation {
-      def apply[T: Implementer](v: T): Implementation = new Implementation {
-        type Type = T
-        def value: Type = v
-        def implementer: Implementer[Type] = implicitly[Implementer[Type]]
-      }
-    }
-
-    def doEvaluation(contexts: Seq[Ctx]): Implementation = new Implementation {
-      type Type = context.Tree
-      
-      def value: context.Tree = {
-        import context.universe.{Literal => _, _}
-
-        val literalPartTrees: Seq[context.Tree] = literals.zipWithIndex.map {
-          case (lit, idx) => q"_root_.contextual.Literal($idx, $lit)"
-        }
-
-        val literalParts: Seq[Literal] = literals.zipWithIndex.map {
-          case (lit, idx) => Literal(idx, lit)
-        }
-
-        val interpolator = interpolatorTerm.get
-
-        val substitutions = contexts.zip(expressions).zipWithIndex.map {
-          case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
-
-            /* TODO: Avoid using runtime reflection to get context objects, if we can. */
-            val reflectiveContextClass =
-              q"_root_.java.lang.Class.forName(${ctx.getClass.getName})"
-            
-            val reflectiveContext =
-              q"""$reflectiveContextClass.getField("MODULE$$").get($reflectiveContextClass)"""
-
-            val castReflectiveContext = q"$reflectiveContext"
-
-            q"$interpolator.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
-        }
-
-        q"""$interpolator.evaluate(
-          new $interpolator.Contextual[$interpolator.RuntimePart](
-            _root_.scala.collection.Seq(..$literals),
-            _root_.scala.collection.Seq(..$substitutions)
-          )
-        )"""
-      }
-      
-      def implementer = Implementer.quasiquotes
-    }
-
-    trait Implementation {
-      type Type
-      def value: Type
-      def implementer: Implementer[Type]
-      def tree: context.Tree = implementer.tree(value)
-    }
-
-    object Implementer {
-      implicit val string: Implementer[String] = new Implementer[String] {
-        def tree(string: String): context.Tree = {
-          import context.universe._
-          q"$string"
-        }
-      }
-      
-      implicit val quasiquotes: Implementer[context.Tree] = new Implementer[context.Tree] {
-        def tree(expr: context.Tree): context.Tree = expr
-      }
-    }
-   
-    /** An `Implementer` defines how a particular value should be converted into an AST tree
-      * for evaluation at runtime. */
-    @implicitNotFound("cannot create an implementation based on the type ${T}")
-    trait Implementer[T] { def tree(value: T): context.Tree }
-
     /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
     def parts: Seq[Parts] = {
       val literalsHead +: literalsTail = literals.zipWithIndex.map { case (lit, idx) =>
@@ -165,11 +90,43 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * at runtime when evaluating an interpolated string. Typically, the implementation of this
     * method will do additional checks based on the information known about the interpolated
     * string at compile time, and will report any warnings or errors during compilation. */
-  def implement(contextual: Contextual[StaticPart]): contextual.Implementation
+  def implement(contextual: Contextual[StaticPart]): Seq[Ctx]
 
-  def parse(string: String): Any = string
+  /** The macro evaluator that defines what code will be generated for this `Interpolator`. The
+    * default implementation constructs a new runtime `Contextual` object, and invokes the
+    * `evaluate` method on the `Interpolator`. */
+  def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.context.Tree = {
+    
+    val c: contextual.context.type = contextual.context
+    
+    import c.universe.{Literal => _, _}
+    
+    val interpolatorTerm = contextual.interpolatorTerm.get
 
-  class Embedding[I] private[Interpolator] () {
+    val substitutions = contexts.zip(contextual.expressions).zipWithIndex.map {
+      case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
+
+        /* TODO: Avoid using runtime reflection to get context objects, if we can. */
+        val reflectiveContextClass =
+          q"_root_.java.lang.Class.forName(${ctx.getClass.getName})"
+        
+        val reflectiveContext =
+          q"""$reflectiveContextClass.getField("MODULE$$").get($reflectiveContextClass)"""
+
+        val castReflectiveContext = q"$reflectiveContext"
+
+        q"$interpolatorTerm.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
+    }
+
+    q"""$interpolatorTerm.evaluate(
+      new $interpolatorTerm.Contextual[$interpolatorTerm.RuntimePart](
+        _root_.scala.collection.Seq(..${contextual.literals}),
+        _root_.scala.collection.Seq(..$substitutions)
+      )
+    )"""
+  }
+
+  class Embedding[I] private[Interpolator]() {
     def apply[CC <: (Context, Context), R](cases: Transition[CC, I, R]*):
         Embedder[CC, I, R, interpolator.type] = new Embedder(cases)
   }

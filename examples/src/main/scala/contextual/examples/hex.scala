@@ -20,7 +20,9 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    def implement(contextual: Contextual[StaticPart]): contextual.Implementation = {
+    def implement(contextual: Contextual[StaticPart]): Seq[Ctx] = Nil
+    
+    override def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]) = {
       import contextual.universe.{Literal => _, _}
 
       val bytes = contextual.parts.flatMap {
@@ -43,12 +45,12 @@ object hex {
 
       val size = bytes.size
       
-      contextual.Implementation(q"""{
+      q"""{
         val array = new Array[Byte]($size)
         ..$bytes
 
         array
-      }""")
+      }"""
     }
   }
 

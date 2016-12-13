@@ -22,7 +22,7 @@ object regex {
 
   object RegexParser extends Interpolator {
 
-    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]): Seq[Ctx] = {
       import ctx.universe.{Literal => _, _}
 
       ctx.parts.foreach {
@@ -39,10 +39,11 @@ object regex {
           hole.abort("substitution is not supported")
       }
 
-      ctx.doEvaluation(contexts = Nil)
+      Nil
     }
 
-    def evaluate(ctx: Contextual[RuntimePart]): Pattern = Pattern.compile(ctx.parts.mkString)
+    def evaluate(ctx: Contextual[RuntimePart]): Pattern =
+      Pattern.compile(ctx.parts.mkString)
 
   }
 

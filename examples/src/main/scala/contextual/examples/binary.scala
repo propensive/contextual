@@ -20,7 +20,9 @@ object binary {
 
   object BinParser extends Interpolator {
 
-    def implement(ctx: Contextual[StaticPart]): ctx.Implementation = {
+    def implement(ctx: Contextual[StaticPart]) = Nil
+
+    override def evaluator(contexts: Seq[Ctx], ctx: Contextual[StaticPart]) = {
       import ctx.universe.{Literal => _, _}
       
       val bytes = ctx.parts.flatMap {
@@ -49,12 +51,12 @@ object binary {
       val size = bytes.size
      
       // The code that will be evaluated at runtime
-      ctx.Implementation(q"""{
+      q"""{
         val array = new Array[Byte]($size)
         ..$bytes
 
         array
-      }""")
+      }"""
     }
   }
 
