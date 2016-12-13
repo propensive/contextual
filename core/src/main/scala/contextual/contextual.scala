@@ -25,27 +25,6 @@ import language.existentials
 /** Represents a compile-time failure in interpolation. */
 case class InterpolationError(part: Int, offset: Int, message: String) extends Exception
 
-/** A `Context` describes the nature of the position in an interpolated string where a
-  * substitution is made, and determines how values of a particular type should be interpreted
-  * in the given position. */
-trait Context {
-  override def toString: String = getClass.getName.split("\\.").last.dropRight(1)
-}
-
-object Embedded {
-  implicit def embed[CC <: (Context, Context), V, R, I <: Interpolator](value: V)
-      (implicit embedder: Embedder[CC, V, R, I]): Embedded[R, I] =
-    new Embedded[R, I] {
-      def apply(ctx: Context): R = {
-        embedder(ctx).apply(value)
-      }
-    }
-}
-
-abstract class Embedded[R, I <: Interpolator] {
-  def apply(ctx: Context): R
-}
-
 object Prefix {
   /** Creates a new prefix. This should be applied directly to a named value in an implicit
     * class that wraps a `StringContext` to bind an interpolator object to a prefix of the
@@ -68,20 +47,21 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
     * the interpolated string.
     *
     * The method is implemented with the main `contextual` macro. */
-  def apply(exprs: Embedded[interpolator.Inputs, interpolator.type]*): Any =
+  def apply(exprs: Interpolator.Embedded[interpolator.Inputs, interpolator.type]*): Any =
     macro Macros.contextual[C, P]
 }
 
 /** An `Interpolator` defines the compile-time and runtime behavior when interpreting an
   * interpolated string. */
-trait Interpolator extends ContextualParts { interpolator =>
+trait Interpolator extends Interpolator.Parts { interpolator =>
     
   /** The `Contextual` type is a representation of the known compile-time information about an
     * interpolated string. Most importantly, this includes the literal parts of the interpolated
     * string; the constant parts which surround the variables parts that are substituted into
     * it. The `Contextual` type also provides details about these holes, specifically the
     * possible set of contexts in which the substituted value may be interpreted. */
-  class Contextual[Parts >: Literal <: Part](val literals: Seq[String], val interspersions: Seq[Parts]) {
+  class Contextual[Parts >: Literal <: Part](val literals: Seq[String],
+      val interspersions: Seq[Parts]) {
 
     override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
 
@@ -189,11 +169,14 @@ trait Interpolator extends ContextualParts { interpolator =>
 
   def parse(string: String): Any = string
 
-  class Embedding[I] protected[Interpolator] () {
+  class Embedding[I] private[Interpolator] () {
     def apply[CC <: (Context, Context), R](cases: Transition[CC, I, R]*):
         Embedder[CC, I, R, interpolator.type] = new Embedder(cases)
   }
 
+  /** Intermediate constructor method for making new `Embedder` typeclasses, via the
+    * `Embedding` class, which only exists as a half-way house for inferring most type
+    * parameters, while having the type `I` specified explicitly. */
   def embed[I]: Embedding[I] = new Embedding()
 }
 
@@ -209,9 +192,11 @@ object Transition {
 /** A `Transition` specifies for a particular `Context` how a value of type `Value` should be
   * converted into the appropriate `Input` type to an `Interpolator`, and how the application of
   * the value should change the `Context` in the interpolated string. */
-class Transition[-CC <: (Context, Context), -Value, +Input](val context: Context,
-    val after: Context, val fn: Value => Input)
+class Transition[-CC <: (Context, Context), -Value, +Input] private[contextual]
+    (val context: Context, val after: Context, val fn: Value => Input)
 
+/** An `Embedder` defines, for an `Interpolator`, `I`, a type `V` should be converted to the
+  * common input type 'R', when substituted into different context positions. */
 class Embedder[CC <: (Context, Context), V, R, I <: Interpolator](
     val cases: Seq[Transition[CC, V, R]]) {
 
@@ -219,46 +204,79 @@ class Embedder[CC <: (Context, Context), V, R, I <: Interpolator](
     cases.find(_.context == c).get.fn
 }
 
-trait ContextualParts {
-
-  type Ctx <: Context
-  type Inputs  
-
-  sealed trait Part extends Product with Serializable
-  
-  sealed trait StaticPart extends Part with Product with Serializable { def index: Int }
-
-  sealed trait RuntimePart extends Part with Product with Serializable { def index: Int }
-
-  /** A `Hole` represents all that is known at compile-time about a substitution into an
-    * interpolated string. */
-  case class Hole(index: Int, input: Map[Ctx, Ctx]) extends StaticPart {
-    
-    override def toString: String = input.keys.mkString("[", "|", "]")
-    
-    def apply(ctx: Ctx): Ctx =
-      input.get(ctx).getOrElse(abort(
-          "values of this type cannot be substituted in this position"))
-
-    /** Aborts compilation, positioning the caret at this hole in the interpolated string,
-      *  displaying the error message, `message`. */
-    def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
-  }
-
-  case class Substitution(index: Int, val value: Inputs) extends RuntimePart {
-    def apply(): Inputs = value
-    override def toString = value.toString
-  }
-
-  /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
-  case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
-
-    override def toString: String = string
-    
-    /** Aborts compilation, positioning the caret at the `offset` into this literal part of the
-      * interpolated string, displaying the error message, `message`. */
-    def abort(offset: Int, message: String) =
-      throw InterpolationError(index, offset, message)
-  }
+/** A `Context` describes the nature of the position in an interpolated string where a
+  * substitution is made, and determines how values of a particular type should be interpreted
+  * in the given position. */
+trait Context {
+  override def toString: String = getClass.getName.split("\\.").last.dropRight(1)
 }
 
+object Interpolator {
+  
+  /** The `embed` implicit method which automatically converts acceptable types to the
+    * `Embedded` type, binding them with their corresponding `Embedder`, which defines how that
+    * type should be converted to a common input type in different contexts. */
+  implicit def embed[CC <: (Context, Context), V, R, I <: Interpolator](value: V)
+      (implicit embedder: Embedder[CC, V, R, I]): Embedded[R, I] =
+    new Embedded[R, I] { def apply(ctx: Context): R = embedder(ctx).apply(value) }
+
+  /** A value which has been embedded as a substitution into an interpolated string, using the
+    * implicit `embed` method. */
+  abstract class Embedded[R, I <: Interpolator] private[contextual] {
+    def apply(ctx: Context): R
+  }
+
+
+  /** Provides case classes representing the literal parts, and interspersed parts of an
+    * interpolated string. */
+  trait Parts {
+
+    type Ctx <: Context
+    type Inputs  
+
+    sealed trait Part extends Product with Serializable
+    
+    /** Sealed trait of parts that are known at compile-time. This is only `Literal` and `Hole`
+      * values. Note that `Literal`s are also available at runtime. */
+    sealed trait StaticPart extends Part with Product with Serializable { def index: Int }
+
+    /** Sealed trait of parts that are known at runtime. This is only `Literal` and
+      * `Substitution` values. Note that `Literal`s are also available at compile-time. */
+    sealed trait RuntimePart extends Part with Product with Serializable { def index: Int }
+
+    /** A `Hole` represents all that is known at compile-time about a substitution into an
+      * interpolated string. */
+    case class Hole(index: Int, input: Map[Ctx, Ctx]) extends StaticPart {
+      
+      override def toString: String = input.keys.mkString("[", "|", "]")
+      
+      def apply(ctx: Ctx): Ctx =
+        input.get(ctx).getOrElse(abort(
+            "values of this type cannot be substituted in this position"))
+
+      /** Aborts compilation, positioning the caret at this hole in the interpolated string,
+        *  displaying the error message, `message`. */
+      def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
+    }
+
+    /** Represents a known value (at runtime) that is substituted into an interpolated string.
+      */
+    case class Substitution(index: Int, val value: Inputs) extends RuntimePart {
+      
+      /** Gets the substituted value. */
+      def apply(): Inputs = value
+
+      override def toString = value.toString
+    }
+
+    /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
+    case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
+
+      override def toString: String = string
+      
+      /** Aborts compilation, positioning the caret at the `offset` into this literal part of
+        * the  interpolated string, displaying the error message, `message`. */
+      def abort(offset: Int, message: String) = throw InterpolationError(index, offset, message)
+    }
+  }
+}
