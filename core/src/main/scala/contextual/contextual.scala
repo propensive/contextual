@@ -1,21 +1,18 @@
 /* Contextual, version 0.14. Copyright 2016 Jon Pretty, Propensive Ltd.
  *
  * The primary distribution site is: http://co.ntextu.al/
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
 package contextual
-
-import scala.reflect._, macros._
-import scala.annotation.implicitNotFound
 
 import language.experimental.macros
 import language.higherKinds
@@ -39,7 +36,7 @@ object Prefix {
   * appropriate for fitting the shape of a desugared interpolated string application. */
 class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
     parts: Seq[String]) {
- 
+
   /** The `apply` method is typically invoked as a result of the desugaring of a StringContext
     * during parsing in Scalac. The method signature takes multiple `Embedded` parameters,
     * which are designed to be created as the result of applying an implicit conversion, which
@@ -48,13 +45,14 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
     *
     * The method is implemented with the main `contextual` macro. */
   def apply(exprs: Interpolator.Embedded[interpolator.Inputs, interpolator.type]*): Any =
-    macro Macros.contextual[C, P]
+      macro Macros.contextual[C, P]
+
 }
 
 /** An `Interpolator` defines the compile-time and runtime behavior when interpreting an
   * interpolated string. */
 trait Interpolator extends Interpolator.Parts { interpolator =>
-    
+
   /** The `Contextual` type is a representation of the known compile-time information about an
     * interpolated string. Most importantly, this includes the literal parts of the interpolated
     * string; the constant parts which surround the variables parts that are substituted into
@@ -66,13 +64,13 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
 
     /** The macro context when expanding the `contextual` macro. */
-    val context: whitebox.Context = null
+    val context: compat.Context = null
 
     /** The expressions that are substituted into the interpolated string. */
     def expressions: Seq[context.Tree] = Nil
-    
+
     lazy val universe: context.universe.type = context.universe
-    
+
     def interpolatorTerm: Option[context.Symbol] = None
 
     /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
@@ -80,10 +78,10 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
       val literalsHead +: literalsTail = literals.zipWithIndex.map { case (lit, idx) =>
         Literal(idx, lit)
       }
-     
+
       literalsHead +: Seq(interspersions, literalsTail).transpose.flatten
     }
-  
+
   }
 
   /** Validates the interpolated string, and returns a sequence of contexts for each hole in the
@@ -94,11 +92,11 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * default implementation constructs a new runtime `Contextual` object, and invokes the
     * `evaluate` method on the `Interpolator`. */
   def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.context.Tree = {
-    
+
     val c: contextual.context.type = contextual.context
-    
+
     import c.universe.{Literal => _, _}
-    
+
     val interpolatorTerm = contextual.interpolatorTerm.get
 
     val substitutions = contexts.zip(contextual.expressions).zipWithIndex.map {
@@ -107,7 +105,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
         /* TODO: Avoid using runtime reflection to get context objects, if we can. */
         val reflectiveContextClass =
           q"_root_.java.lang.Class.forName(${ctx.getClass.getName})"
-        
+
         val reflectiveContext =
           q"""$reflectiveContextClass.getField("MODULE$$").get($reflectiveContextClass)"""
 
@@ -167,7 +165,7 @@ trait Context {
 }
 
 object Interpolator {
-  
+
   /** The `embed` implicit method which automatically converts acceptable types to the
     * `Embedded` type, binding them with their corresponding `Embedder`, which defines how that
     * type should be converted to a common input type in different contexts. */
@@ -187,10 +185,10 @@ object Interpolator {
   trait Parts {
 
     type Ctx <: Context
-    type Inputs  
+    type Inputs
 
     sealed trait Part extends Product with Serializable
-    
+
     /** Sealed trait of parts that are known at compile-time. This is only `Literal` and `Hole`
       * values. Note that `Literal`s are also available at runtime. */
     sealed trait StaticPart extends Part with Product with Serializable { def index: Int }
@@ -202,9 +200,9 @@ object Interpolator {
     /** A `Hole` represents all that is known at compile-time about a substitution into an
       * interpolated string. */
     case class Hole(index: Int, input: Map[Ctx, Ctx]) extends StaticPart {
-      
+
       override def toString: String = input.keys.mkString("[", "|", "]")
-      
+
       def apply(ctx: Ctx): Ctx =
         input.get(ctx).getOrElse(abort(
             "values of this type cannot be substituted in this position"))
@@ -217,7 +215,7 @@ object Interpolator {
     /** Represents a known value (at runtime) that is substituted into an interpolated string.
       */
     case class Substitution(index: Int, val value: Inputs) extends RuntimePart {
-      
+
       /** Gets the substituted value. */
       def apply(): Inputs = value
 
@@ -228,7 +226,7 @@ object Interpolator {
     case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
 
       override def toString: String = string
-      
+
       /** Aborts compilation, positioning the caret at the `offset` into this literal part of
         * the  interpolated string, displaying the error message, `message`. */
       def abort(offset: Int, message: String) = throw InterpolationError(index, offset, message)
