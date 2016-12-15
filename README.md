@@ -1,4 +1,4 @@
-[![Latest version](https://index.scala-lang.org/com.propensive/contextual/0.12/latest.svg)](https://index.scala-lang.org/com.propensive/contextual/0.12)
+[![Latest version](https://index.scala-lang.org/com.propensive/contextual/0.14/latest.svg)](https://index.scala-lang.org/com.propensive/contextual/0.14)
 [![Join the chat at https://gitter.im/propensive/contextual](https://badges.gitter.im/propensive/contextual.svg)](https://gitter.im/propensive/contextual?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
 
 # Contextual
