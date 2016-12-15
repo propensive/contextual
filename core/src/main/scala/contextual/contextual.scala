@@ -67,7 +67,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     val context: compat.Context = null
 
     /** The expressions that are substituted into the interpolated string. */
-    def expressions: Seq[context.Tree] = Nil
+    def expressions: Seq[context.Expr[Any]] = Nil
 
     lazy val universe: context.universe.type = context.universe
 
@@ -91,7 +91,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
   /** The macro evaluator that defines what code will be generated for this `Interpolator`. The
     * default implementation constructs a new runtime `Contextual` object, and invokes the
     * `evaluate` method on the `Interpolator`. */
-  def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.context.Tree = {
+  def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.context.Expr[Any] = {
 
     val c: contextual.context.type = contextual.context
 

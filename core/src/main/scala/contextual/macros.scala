@@ -19,8 +19,7 @@ import language.experimental.macros
 /** Object containing the main macro providing Contextual's functionality. */
 object Macros {
   def contextual[C <: Context, I <: Interpolator { type Ctx = C }: c.WeakTypeTag]
-  (c: compat.Context)(exprs: c.Tree*): c.Tree = {
-  //(c: foobar.Context)(exprs: c.Tree*): c.Tree = {
+  (c: compat.Context)(exprs: c.Expr[Any]*): c.Expr[Any] = {
 
     import c.universe.{Literal => AstLiteral, _}
 
