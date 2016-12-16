@@ -1,12 +1,12 @@
 /* Contextual, version 0.14. Copyright 2016 Jon Pretty, Propensive Ltd.
  *
  * The primary distribution site is: http://co.ntextu.al/
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -21,8 +21,8 @@ object hex {
   object HexParser extends Interpolator {
 
     def contextualize(contextual: Contextual[StaticPart]): Seq[Ctx] = Nil
-    
-    override def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]) = {
+
+    override def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.universe.Tree = {
       import contextual.universe.{Literal => _, _}
 
       val bytes = contextual.parts.flatMap {
@@ -40,11 +40,11 @@ object hex {
 
         case hole@Hole(_, _) =>
           hole.abort("substitutions are not supported")
-      
+
       }
 
       val size = bytes.size
-      
+
       q"""{
         val array = new Array[Byte]($size)
         ..$bytes

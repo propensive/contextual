@@ -1,12 +1,12 @@
 /* Contextual, version 0.14. Copyright 2016 Jon Pretty, Propensive Ltd.
  *
  * The primary distribution site is: http://co.ntextu.al/
- * 
+ *
  * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file
  * except in compliance with the License. You may obtain a copy of the License at
- * 
+ *
  * http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software distributed under the
  * License is distributed on an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND,
  * either express or implied. See the License for the specific language governing permissions
@@ -22,9 +22,9 @@ object binary {
 
     def contextualize(ctx: Contextual[StaticPart]) = Nil
 
-    override def evaluator(contexts: Seq[Ctx], ctx: Contextual[StaticPart]) = {
+    override def evaluator(contexts: Seq[Ctx], ctx: Contextual[StaticPart]): ctx.universe.Tree = {
       import ctx.universe.{Literal => _, _}
-      
+
       val bytes = ctx.parts.flatMap {
         case lit@Literal(index, string) =>
 
@@ -45,11 +45,11 @@ object binary {
 
           // We don't support substitutions (yet)
           hole.abort("can't make substitutions")
-      
+
       }
 
       val size = bytes.size
-     
+
       // The code that will be evaluated at runtime
       q"""{
         val array = new Array[Byte]($size)
