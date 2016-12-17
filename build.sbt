@@ -13,6 +13,7 @@ lazy val examples = project
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
   .settings(moduleName := "contextual-examples")
+  .settings(quasiQuotesDependencies)
   .dependsOn(core)
 
 lazy val tests = project
@@ -20,6 +21,7 @@ lazy val tests = project
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
+  .settings(quasiQuotesDependencies)
   .dependsOn(examples)
 
 lazy val buildSettings = Seq(
@@ -28,7 +30,7 @@ lazy val buildSettings = Seq(
   name := "contextual",
   version := "0.14",
   scalacOptions ++= Seq("-deprecation", "-feature"),
-  crossScalaVersions := Seq("2.11.8", "2.12.1"),
+  crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
 )
@@ -81,30 +83,30 @@ lazy val noPublishSettings = Seq(
 
 import java.io.File
 
-def crossVersionSharedSources()  = Seq( 
+def crossVersionSharedSources()  = Seq(
  (unmanagedSourceDirectories in Compile) ++= { (unmanagedSourceDirectories in Compile ).value.map {
      dir:File => new File(dir.getPath + "_" + scalaBinaryVersion.value)}}
 )
 
-lazy val scalaMacroDependencies: Seq[Setting[_]] = Seq(
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+lazy val quasiQuotesDependencies: Seq[Setting[_]] =
   libraryDependencies ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      // if scala 2.11+ is used, quasiquotes are merged into scala-reflect
       case Some((2, scalaMajor)) if scalaMajor >= 11 => Seq()
-      // in Scala 2.10, quasiquotes are provided by macro paradise
-      case Some((2, 10)) =>
-        Seq(
-          compilerPlugin("org.scalamacros" % "paradise" % "2.1.0-M5" cross CrossVersion.full),
-              "org.scalamacros" %% "quasiquotes" % "2.1.0-M5" cross CrossVersion.binary
-        )
+      case Some((2, 10)) => Seq(
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
+        "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
+      )
     }
   }
+
+lazy val scalaMacroDependencies: Seq[Setting[_]] = Seq(
+  libraryDependencies += "org.typelevel" %% "macro-compat" % "1.1.1",
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
+  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
+  libraryDependencies += compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
 )
 
 credentials ++= (for {
   username <- Option(System.getenv().get("SONATYPE_USERNAME"))
   password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
 } yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
-
