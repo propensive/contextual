@@ -31,10 +31,10 @@ class Macros(val c: whitebox.Context) {
       case Select(Apply(_, List(Apply(_, lits))), _) => lits
     }
 
-    val literals = astLiterals.map { case AstLiteral(Constant(str: String)) => str }
+    val stringLiterals: Seq[String] = astLiterals.map { case AstLiteral(Constant(str: String)) => str }
 
     /* Get the "context" types derived from each parameter. */
-    val appliedParameters = c.macroApplication match {
+    val appliedParameters: Seq[Tree] = c.macroApplication match {
       case Apply(_, params) => params
     }
 
@@ -55,7 +55,7 @@ class Macros(val c: whitebox.Context) {
       cls.getField("MODULE$").get(cls) match { case cls: M => cls }
     }
 
-    val interpolatorName = javaClassName(weakTypeOf[I].typeSymbol)
+    val interpolatorName: String = javaClassName(weakTypeOf[I].typeSymbol)
 
     /* Get an instance of the Interpolator class. */
     val interpolator = try getModule[I](weakTypeOf[I]) catch {
@@ -78,34 +78,38 @@ class Macros(val c: whitebox.Context) {
     }
 
     val combinedParts: Seq[interpolator.StaticPart] =
-      interpolator.Literal(0, literals.head) +: Seq(
+      interpolator.Literal(0, stringLiterals.head) +: Seq(
         parameterTypes.to[List],
-        literals.to[List].tail.zipWithIndex.map { case (v, i) =>
+        stringLiterals.to[List].tail.zipWithIndex.map { case (v, i) =>
           interpolator.Literal(i + 1, v)
         }
       ).transpose.flatten
 
 
-    val contextualValue =
-      new interpolator.Contextual[interpolator.StaticPart](literals, parameterTypes) {
-        override val context: c.type = c
-        override def expressions = exprs
-        override val interpolatorTerm = Some(weakTypeOf[I].termSymbol)
+    val contextualValue: interpolator.StaticContext { val macroContext: c.type } =
+      new interpolator.StaticContext {
+        val macroContext: c.type = c
+        val literals: Seq[String] = stringLiterals
+        val interspersions: Seq[interpolator.Hole] = parameterTypes
+
+        def expressions: Seq[c.Tree] = exprs
+        def interpolatorTerm: c.Symbol = weakTypeOf[I].termSymbol
       }
 
-    val contexts = try interpolator.contextualize(contextualValue) catch {
-      case InterpolationError(part, offset, message) =>
-        val (errorLiteral, length) = astLiterals(part) match {
-          case lit@AstLiteral(Constant(str: String)) => (lit, str.length)
-        }
+    val contexts: Seq[interpolator.Ctx] =
+      try interpolator.contextualize(contextualValue) catch {
+        case InterpolationError(part, offset, message) =>
+          val (errorLiteral, length) = astLiterals(part) match {
+            case lit@AstLiteral(Constant(str: String)) => (lit, str.length)
+          }
 
-        /* Calculate the error position from the start of the corresponding literal part, plus
-         * the offset. */
-        val realOffset = if(offset < 0) length else (offset min length)
-        val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + realOffset)
+          /* Calculate the error position from the start of the corresponding literal part, plus
+           * the offset. */
+          val realOffset = if(offset < 0) length else (offset min length)
+          val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + realOffset)
 
-        c.abort(errorPosition, message)
-    }
+          c.abort(errorPosition, message)
+      }
 
     interpolator.evaluator(contexts, contextualValue)
   }

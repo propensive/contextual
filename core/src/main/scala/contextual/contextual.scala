@@ -60,23 +60,40 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * string; the constant parts which surround the variables parts that are substituted into
     * it. The `Contextual` type also provides details about these holes, specifically the
     * possible set of contexts in which the substituted value may be interpreted. */
-  class Contextual[Parts >: Literal <: Part](val literals: Seq[String],
-      val interspersions: Seq[Parts]) {
+  class RuntimeContext(val literals: Seq[String],
+      val interspersions: Seq[RuntimePart]) {
 
     override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
 
-    /** The macro context when expanding the `contextual` macro. */
-    val context: whitebox.Context = null
+    /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
+    def parts: Seq[RuntimePart] = {
+      val literalsHead +: literalsTail = literals.zipWithIndex.map { case (lit, idx) =>
+        Literal(idx, lit)
+      }
 
-    /** The expressions that are substituted into the interpolated string. */
-    def expressions: Seq[context.Tree] = Nil
+      literalsHead +: Seq(interspersions, literalsTail).transpose.flatten
+    }
+  }
 
-    lazy val universe: context.universe.type = context.universe
+  /** The `Contextual` type is a representation of the known compile-time information about an
+    * interpolated string. Most importantly, this includes the literal parts of the interpolated
+    * string; the constant parts which surround the variables parts that are substituted into
+    * it. The `Contextual` type also provides details about these holes, specifically the
+    * possible set of contexts in which the substituted value may be interpreted. */
+  trait StaticContext {
+    
+    val macroContext: whitebox.Context
+    def literals: Seq[String]
+    def interspersions: Seq[StaticPart]
+    def expressions: Seq[macroContext.Tree]
+    def interpolatorTerm: macroContext.Symbol
 
-    def interpolatorTerm: Option[context.Symbol] = None
+    override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
+
+    lazy val universe: macroContext.universe.type = macroContext.universe
 
     /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
-    def parts: Seq[Parts] = {
+    def parts: Seq[StaticPart] = {
       val literalsHead +: literalsTail = literals.zipWithIndex.map { case (lit, idx) =>
         Literal(idx, lit)
       }
@@ -88,16 +105,14 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
   /** Validates the interpolated string, and returns a sequence of contexts for each hole in the
     * string. */
-  def contextualize(contextual: Contextual[StaticPart]): Seq[Ctx]
+  def contextualize(contextual: StaticContext): Seq[Ctx]
 
   /** The macro evaluator that defines what code will be generated for this `Interpolator`. The
     * default implementation constructs a new runtime `Contextual` object, and invokes the
     * `evaluate` method on the `Interpolator`. */
-  def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.universe.Tree = {
+  def evaluator(contexts: Seq[Ctx], contextual: StaticContext): contextual.macroContext.Tree = {
 
-    import contextual.context.universe._
-
-    val interpolatorTerm = contextual.interpolatorTerm.get
+    import contextual.macroContext.universe._
 
     val substitutions = contexts.zip(contextual.expressions).zipWithIndex.map {
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
@@ -111,11 +126,11 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
         val castReflectiveContext = q"$reflectiveContext"
 
-        q"$interpolatorTerm.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
+        q"${contextual.interpolatorTerm}.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
     }
 
-    q"""$interpolatorTerm.evaluate(
-      new $interpolatorTerm.Contextual[$interpolatorTerm.RuntimePart](
+    q"""${contextual.interpolatorTerm}.evaluate(
+      new ${contextual.interpolatorTerm}.RuntimeContext(
         _root_.scala.collection.Seq(..${contextual.literals}),
         _root_.scala.collection.Seq(..$substitutions)
       )

@@ -20,9 +20,9 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    def contextualize(contextual: Contextual[StaticPart]): Seq[Ctx] = Nil
+    def contextualize(contextual: StaticContext): Seq[Ctx] = Nil
 
-    override def evaluator(contexts: Seq[Ctx], contextual: Contextual[StaticPart]): contextual.universe.Tree = {
+    override def evaluator(contexts: Seq[Ctx], contextual: StaticContext): contextual.universe.Tree = {
       import contextual.universe.{Literal => _, _}
 
       val bytes = contextual.parts.flatMap {

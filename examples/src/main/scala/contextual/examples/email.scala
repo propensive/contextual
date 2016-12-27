@@ -26,7 +26,7 @@ object email {
 
   object EmailParser extends Interpolator {
 
-    def contextualize(ctx: Contextual[StaticPart]): Seq[Ctx] = {
+    def contextualize(ctx: StaticContext): Seq[Ctx] = {
       
       ctx.parts.foreach {
         case lit@Literal(_, string) =>
@@ -40,7 +40,7 @@ object email {
       Nil
     }
 
-    def evaluate(contextual: Contextual[RuntimePart]): EmailAddress =
+    def evaluate(contextual: RuntimeContext): EmailAddress =
       EmailAddress(contextual.parts.mkString)
 
   }

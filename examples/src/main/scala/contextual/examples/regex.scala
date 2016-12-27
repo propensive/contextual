@@ -22,7 +22,7 @@ object regex {
 
   object RegexParser extends Interpolator {
 
-    def contextualize(ctx: Contextual[StaticPart]): Seq[Ctx] = {
+    def contextualize(ctx: StaticContext): Seq[Ctx] = {
       import ctx.universe.{Literal => _, _}
 
       ctx.parts.foreach {
@@ -42,7 +42,7 @@ object regex {
       Nil
     }
 
-    def evaluate(ctx: Contextual[RuntimePart]): Pattern =
+    def evaluate(ctx: RuntimeContext): Pattern =
       Pattern.compile(ctx.parts.mkString)
 
   }

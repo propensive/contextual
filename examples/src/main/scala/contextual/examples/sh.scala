@@ -32,13 +32,13 @@ object shell {
     type Ctx = ShellContext
     type Inputs = String
 
-    def evaluate(ctx: Contextual[RuntimePart]): Process = {
+    def evaluate(ctx: RuntimeContext): Process = {
       val command = ctx.parts.mkString
       val (_, params) = parseLiteral(NewParam, command)
       Process(params: _*)
     }
 
-    def contextualize(ctx: Contextual[StaticPart]): Seq[Ctx] = {
+    def contextualize(ctx: StaticContext): Seq[Ctx] = {
       import ctx.universe.{Literal => _, _}
 
       val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {

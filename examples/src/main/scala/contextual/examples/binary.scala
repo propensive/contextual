@@ -20,9 +20,9 @@ object binary {
 
   object BinParser extends Interpolator {
 
-    def contextualize(ctx: Contextual[StaticPart]) = Nil
+    def contextualize(ctx: StaticContext) = Nil
 
-    override def evaluator(contexts: Seq[Ctx], ctx: Contextual[StaticPart]): ctx.universe.Tree = {
+    override def evaluator(contexts: Seq[Ctx], ctx: StaticContext): ctx.universe.Tree = {
       import ctx.universe.{Literal => _, _}
 
       val bytes = ctx.parts.flatMap {
