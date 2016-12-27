@@ -47,13 +47,13 @@ object shell {
           (contexts, newState)
 
         case ((contexts, state), hole@Hole(_, _)) =>
-          val newState = hole(state)
+          val newState = hole(state).getOrElse(ctx.abort(hole, "this type cannot be substituted here"))
           (newState :: contexts, newState)
       }
 
       if(finalState == InSingleQuotes || finalState == InDoubleQuotes) {
         val lit@Literal(_, _) = ctx.parts.last
-        lit.abort(lit.string.length, "unclosed quoted parameter")
+        ctx.abort(lit, lit.string.length, "unclosed quoted parameter")
       }
 
       contexts

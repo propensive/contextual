@@ -31,10 +31,10 @@ object email {
       ctx.parts.foreach {
         case lit@Literal(_, string) =>
           if(validEmail.findFirstMatchIn(string).isEmpty)
-            lit.abort(0, "this is not a valid email address")
+            ctx.abort(lit, 0, "this is not a valid email address")
       
         case hole@Hole(_, _) =>
-          hole.abort("substitutions are not supported")
+          ctx.abort(hole, "substitutions are not supported")
       }
 
       Nil

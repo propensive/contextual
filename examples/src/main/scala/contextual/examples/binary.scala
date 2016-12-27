@@ -30,11 +30,11 @@ object binary {
 
           // Fail on any uses of non-binary characters
           string.zipWithIndex.map { case (ch, idx) =>
-            if(ch != '0' && ch != '1') lit.abort(idx, "only '0' and '1' are valid")
+            if(ch != '0' && ch != '1') ctx.error(lit, idx, "only '0' and '1' are valid")
           }
 
           // Fail if it's the wrong length
-          if(string.length%8 != 0) lit.abort(0, "binary size is not an exact number of bytes")
+          if(string.length%8 != 0) ctx.abort(lit, 0, "binary size is not an exact number of bytes")
 
           // Convert the string to a sequence of assignment operations
           string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
@@ -44,7 +44,7 @@ object binary {
         case hole@Hole(_, _) =>
 
           // We don't support substitutions (yet)
-          hole.abort("can't make substitutions")
+          ctx.abort(hole, "can't make substitutions")
 
       }
 

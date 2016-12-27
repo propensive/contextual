@@ -24,7 +24,7 @@ import language.experimental.macros
 class Macros(val c: whitebox.Context) {
   import c.universe.{Literal => AstLiteral, _}
 
-  def contextual[C <: Context, I <: Interpolator { type Ctx = C }: c.WeakTypeTag](exprs: Tree*): Tree = {
+  def contextual[C <: Context, I <: Interpolator { type Ctx = C }: c.WeakTypeTag](expressions: Tree*): Tree = {
 
     /* Get the string literals from the constructed `StringContext`. */
     val astLiterals = c.prefix.tree match {
@@ -90,26 +90,14 @@ class Macros(val c: whitebox.Context) {
       new interpolator.StaticContext {
         val macroContext: c.type = c
         val literals: Seq[String] = stringLiterals
-        val interspersions: Seq[interpolator.Hole] = parameterTypes
+        val holes: Seq[interpolator.Hole] = parameterTypes
 
-        def expressions: Seq[c.Tree] = exprs
+        def holeTrees: Seq[c.Tree] = expressions
+        def literalTrees: Seq[c.Tree] = astLiterals
         def interpolatorTerm: c.Symbol = weakTypeOf[I].termSymbol
       }
 
-    val contexts: Seq[interpolator.Ctx] =
-      try interpolator.contextualize(contextualValue) catch {
-        case InterpolationError(part, offset, message) =>
-          val (errorLiteral, length) = astLiterals(part) match {
-            case lit@AstLiteral(Constant(str: String)) => (lit, str.length)
-          }
-
-          /* Calculate the error position from the start of the corresponding literal part, plus
-           * the offset. */
-          val realOffset = if(offset < 0) length else (offset min length)
-          val errorPosition = errorLiteral.pos.withPoint(errorLiteral.pos.start + realOffset)
-
-          c.abort(errorPosition, message)
-      }
+    val contexts: Seq[interpolator.Ctx] = interpolator.contextualize(contextualValue)
 
     interpolator.evaluator(contexts, contextualValue)
   }

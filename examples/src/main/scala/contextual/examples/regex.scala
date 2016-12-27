@@ -32,11 +32,11 @@ object regex {
 
               // We take only the interesting part of the error message
               val message = p.getMessage.split(" near").head
-              lit.abort(p.getIndex - 1, message)
+              ctx.error(lit, p.getIndex - 1, message)
           }
 
         case hole@Hole(_, _) =>
-          hole.abort("substitution is not supported")
+          ctx.abort(hole, "substitution is not supported")
       }
 
       Nil

@@ -22,9 +22,6 @@ import language.higherKinds
 import language.implicitConversions
 import language.existentials
 
-/** Represents a compile-time failure in interpolation. */
-case class InterpolationError(part: Int, offset: Int, message: String) extends Exception
-
 object Prefix {
   /** Creates a new prefix. This should be applied directly to a named value in an implicit
     * class that wraps a `StringContext` to bind an interpolator object to a prefix of the
@@ -47,7 +44,7 @@ class Prefix[C <: Context, P <: Interpolator { type Ctx = C }](interpolator: P,
     * the interpolated string.
     *
     * The method is implemented with the main `contextual` macro. */
-  def apply(exprs: Interpolator.Embedded[interpolator.Inputs, interpolator.type]*): Any =
+  def apply(expressions: Interpolator.Embedded[interpolator.Inputs, interpolator.type]*): Any =
     macro Macros.contextual[C, P]
 }
 
@@ -61,9 +58,9 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * it. The `Contextual` type also provides details about these holes, specifically the
     * possible set of contexts in which the substituted value may be interpreted. */
   class RuntimeContext(val literals: Seq[String],
-      val interspersions: Seq[RuntimePart]) {
+      val substitutions: Seq[Substitution]) {
 
-    override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
+    override def toString = Seq("" +: substitutions, literals).transpose.flatten.mkString
 
     /** Provides the sequence of `Literal`s and `Hole`s in this interpolated string. */
     def parts: Seq[RuntimePart] = {
@@ -71,7 +68,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
         Literal(idx, lit)
       }
 
-      literalsHead +: Seq(interspersions, literalsTail).transpose.flatten
+      literalsHead +: Seq(substitutions, literalsTail).transpose.flatten
     }
   }
 
@@ -84,11 +81,12 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     
     val macroContext: whitebox.Context
     def literals: Seq[String]
-    def interspersions: Seq[StaticPart]
-    def expressions: Seq[macroContext.Tree]
+    def holes: Seq[Hole]
+    def literalTrees: Seq[macroContext.Tree]
+    def holeTrees: Seq[macroContext.Tree]
     def interpolatorTerm: macroContext.Symbol
 
-    override def toString = Seq("" +: interspersions, literals).transpose.flatten.mkString
+    override def toString = Seq("" +: holes, literals).transpose.flatten.mkString
 
     lazy val universe: macroContext.universe.type = macroContext.universe
 
@@ -98,8 +96,35 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
         Literal(idx, lit)
       }
 
-      literalsHead +: Seq(interspersions, literalsTail).transpose.flatten
+      literalsHead +: Seq(holes, literalsTail).transpose.flatten
     }
+
+    private def position(part: StaticPart, offset: Int): macroContext.Position = {
+      val errorTree: macroContext.Tree = part match {
+        case Hole(index, _) => holeTrees(index)
+        case Literal(index, _) => literalTrees(index)
+      }
+      
+      errorTree.pos.withPoint(errorTree.pos.start + offset)
+    }
+
+    def error(part: Literal, offset: Int, message: String): Unit =
+      macroContext.error(position(part, offset), message)
+
+    def abort(part: Literal, offset: Int, message: String): Nothing =
+      macroContext.abort(position(part, offset), message)
+
+    def warn(part: Literal, offset: Int, message: String): Unit =
+      macroContext.warning(position(part, offset), message)
+
+    def error(part: Hole, message: String): Unit =
+      macroContext.error(position(part, 0), message)
+
+    def abort(part: Hole, message: String): Nothing =
+      macroContext.abort(position(part, 0), message)
+
+    def warn(part: Hole, message: String): Unit =
+      macroContext.warning(position(part, 0), message)
 
   }
 
@@ -114,7 +139,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
     import contextual.macroContext.universe._
 
-    val substitutions = contexts.zip(contextual.expressions).zipWithIndex.map {
+    val substitutions = contexts.zip(contextual.holeTrees).zipWithIndex.map {
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         /* TODO: Avoid using runtime reflection to get context objects, if we can. */
@@ -218,13 +243,7 @@ object Interpolator {
 
       override def toString: String = input.keys.mkString("[", "|", "]")
 
-      def apply(ctx: Ctx): Ctx =
-        input.get(ctx).getOrElse(abort(
-            "values of this type cannot be substituted in this position"))
-
-      /** Aborts compilation, positioning the caret at this hole in the interpolated string,
-        *  displaying the error message, `message`. */
-      def abort(message: String): Nothing = throw InterpolationError(index, -1, message)
+      def apply(ctx: Ctx): Option[Ctx] = input.get(ctx)
     }
 
     /** Represents a known value (at runtime) that is substituted into an interpolated string.
@@ -239,12 +258,7 @@ object Interpolator {
 
     /** Represents a fixed, constant part of an interpolated string, known at compile-time. */
     case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
-
       override def toString: String = string
-
-      /** Aborts compilation, positioning the caret at the `offset` into this literal part of
-        * the  interpolated string, displaying the error message, `message`. */
-      def abort(offset: Int, message: String) = throw InterpolationError(index, offset, message)
     }
   }
 }

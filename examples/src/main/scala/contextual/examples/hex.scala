@@ -20,18 +20,18 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    def contextualize(contextual: StaticContext): Seq[Ctx] = Nil
+    def contextualize(ctx: StaticContext): Seq[Ctx] = Nil
 
-    override def evaluator(contexts: Seq[Ctx], contextual: StaticContext): contextual.universe.Tree = {
-      import contextual.universe.{Literal => _, _}
+    override def evaluator(contexts: Seq[Ctx], ctx: StaticContext): ctx.universe.Tree = {
+      import ctx.universe.{Literal => _, _}
 
-      val bytes = contextual.parts.flatMap {
+      val bytes = ctx.parts.flatMap {
         case lit@Literal(index, string) =>
           string.zipWithIndex.foreach { case (ch, idx) =>
-            if(ch < 48 || (ch > 57 && ch < 97) || ch > 102) lit.abort(idx, "bad hexadecimal")
+            if(ch < 48 || (ch > 57 && ch < 97) || ch > 102) ctx.error(lit, idx, "bad hexadecimal digit")
           }
 
-          if(string.length%2 != 0) lit.abort(0,
+          if(string.length%2 != 0) ctx.abort(lit, 0,
               "hexadecimal size is not an exact number of bytes")
 
           string.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
@@ -39,7 +39,7 @@ object hex {
           }
 
         case hole@Hole(_, _) =>
-          hole.abort("substitutions are not supported")
+          ctx.abort(hole, "substitutions are not supported")
 
       }
 
