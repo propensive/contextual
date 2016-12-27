@@ -130,16 +130,16 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
   /** Validates the interpolated string, and returns a sequence of contexts for each hole in the
     * string. */
-  def contextualize(contextual: StaticContext): Seq[Ctx]
+  def contextualize(staticContext: StaticContext): Seq[Ctx]
 
   /** The macro evaluator that defines what code will be generated for this `Interpolator`. The
     * default implementation constructs a new runtime `Contextual` object, and invokes the
     * `evaluate` method on the `Interpolator`. */
-  def evaluator(contexts: Seq[Ctx], contextual: StaticContext): contextual.macroContext.Tree = {
+  def evaluator(contexts: Seq[Ctx], staticContext: StaticContext): staticContext.macroContext.Tree = {
 
-    import contextual.macroContext.universe._
+    import staticContext.macroContext.universe._
 
-    val substitutions = contexts.zip(contextual.holeTrees).zipWithIndex.map {
+    val substitutions = contexts.zip(staticContext.holeTrees).zipWithIndex.map {
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         /* TODO: Avoid using runtime reflection to get context objects, if we can. */
@@ -151,12 +151,12 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
         val castReflectiveContext = q"$reflectiveContext"
 
-        q"${contextual.interpolatorTerm}.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
+        q"${staticContext.interpolatorTerm}.Substitution($idx, $embedder($castReflectiveContext).apply($value))"
     }
 
-    q"""${contextual.interpolatorTerm}.evaluate(
-      new ${contextual.interpolatorTerm}.RuntimeContext(
-        _root_.scala.collection.Seq(..${contextual.literals}),
+    q"""${staticContext.interpolatorTerm}.evaluate(
+      new ${staticContext.interpolatorTerm}.RuntimeContext(
+        _root_.scala.collection.Seq(..${staticContext.literals}),
         _root_.scala.collection.Seq(..$substitutions)
       )
     )"""
