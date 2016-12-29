@@ -19,19 +19,22 @@ import macrocompat.bundle
 
 import language.experimental.macros
 
-/** Object containing the main macro providing Contextual's functionality. */
+/** Macro bundle class containing the main macro providing Contextual's functionality. */
 @bundle
 class Macros(val c: whitebox.Context) {
   import c.universe.{Literal => AstLiteral, _}
 
-  def contextual[C <: Context, I <: Interpolator { type Ctx = C }: c.WeakTypeTag](expressions: Tree*): Tree = {
+  def contextual[C <: Context, I <: Interpolator { type ContextType = C }: c.WeakTypeTag]
+      (expressions: Tree*): Tree = {
 
     /* Get the string literals from the constructed `StringContext`. */
     val astLiterals = c.prefix.tree match {
       case Select(Apply(_, List(Apply(_, lits))), _) => lits
     }
 
-    val stringLiterals: Seq[String] = astLiterals.map { case AstLiteral(Constant(str: String)) => str }
+    val stringLiterals: Seq[String] = astLiterals.map {
+      case AstLiteral(Constant(str: String)) => str
+    }
 
     /* Get the "context" types derived from each parameter. */
     val appliedParameters: Seq[Tree] = c.macroApplication match {
@@ -97,7 +100,7 @@ class Macros(val c: whitebox.Context) {
         def interpolatorTerm: c.Symbol = weakTypeOf[I].termSymbol
       }
 
-    val contexts: Seq[interpolator.Ctx] = interpolator.contextualize(staticContext)
+    val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(staticContext)
 
     interpolator.evaluator(contexts, staticContext)
   }

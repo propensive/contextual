@@ -29,8 +29,8 @@ object shell {
   case object NewParam extends ShellContext
 
   object ShellInterpolator extends Interpolator {
-    type Ctx = ShellContext
-    type Inputs = String
+    type ContextType = ShellContext
+    type Input = String
 
     def evaluate(ctx: RuntimeContext): Process = {
       val command = ctx.parts.mkString
@@ -38,10 +38,10 @@ object shell {
       Process(params: _*)
     }
 
-    def contextualize(ctx: StaticContext): Seq[Ctx] = {
+    def contextualize(ctx: StaticContext): Seq[ContextType] = {
       import ctx.universe.{Literal => _, _}
 
-      val (contexts, finalState) = ctx.parts.foldLeft((List[Ctx](), NewParam: ShellContext)) {
+      val (contexts, finalState) = ctx.parts.foldLeft((List[ContextType](), NewParam: ShellContext)) {
         case ((contexts, state), lit@Literal(_, string)) =>
           val (newState, _) = parseLiteral(state, string)
           (contexts, newState)
@@ -59,7 +59,7 @@ object shell {
       contexts
     }
 
-    private def parseLiteral(state: Ctx, string: String): (Ctx, List[String]) =
+    private def parseLiteral(state: ContextType, string: String): (ContextType, List[String]) =
       string.foldLeft((state, List[String](""))) {
         case ((NewParam, params), ' ') =>
           (NewParam, params)
@@ -88,10 +88,10 @@ object shell {
     }
 
   implicit val embedStrings = ShellInterpolator.embed[String](
-    Transition(NewParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
-    Transition(InUnquotedParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
-    Transition(InSingleQuotes, InSingleQuotes) { s => s.replaceAll("'", """'"'"'""") },
-    Transition(InDoubleQuotes, InDoubleQuotes) { s => s.replaceAll("\\\"", "\\\\\"") }
+    Case(NewParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
+    Case(InUnquotedParam, InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
+    Case(InSingleQuotes, InSingleQuotes) { s => s.replaceAll("'", """'"'"'""") },
+    Case(InDoubleQuotes, InDoubleQuotes) { s => s.replaceAll("\\\"", "\\\\\"") }
   )
   
   implicit class ShellStringContext(sc: StringContext) {
