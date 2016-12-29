@@ -89,8 +89,8 @@ class Macros(val c: whitebox.Context) {
       ).transpose.flatten
 
 
-    val staticContext: interpolator.StaticContext { val macroContext: c.type } =
-      new interpolator.StaticContext {
+    val interpolation: interpolator.StaticInterpolation { val macroContext: c.type } =
+      new interpolator.StaticInterpolation {
         val macroContext: c.type = c
         val literals: Seq[String] = stringLiterals
         val holes: Seq[interpolator.Hole] = parameterTypes
@@ -100,8 +100,8 @@ class Macros(val c: whitebox.Context) {
         def interpolatorTerm: c.Symbol = weakTypeOf[I].termSymbol
       }
 
-    val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(staticContext)
+    val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(interpolation)
 
-    interpolator.evaluator(contexts, staticContext)
+    interpolator.evaluator(contexts, interpolation)
   }
 }

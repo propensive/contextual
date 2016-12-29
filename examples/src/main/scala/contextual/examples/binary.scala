@@ -20,21 +20,24 @@ object binary {
 
   object BinParser extends Interpolator {
 
-    def contextualize(ctx: StaticContext) = Nil
+    def contextualize(interpolation: StaticInterpolation) = Nil
 
-    override def evaluator(contexts: Seq[ContextType], ctx: StaticContext): ctx.universe.Tree = {
-      import ctx.universe.{Literal => _, _}
+    override def evaluator(contexts: Seq[ContextType], interpolation: StaticInterpolation):
+        interpolation.universe.Tree = {
+      import interpolation.universe.{Literal => _, _}
 
-      val bytes = ctx.parts.flatMap {
+      val bytes = interpolation.parts.flatMap {
         case lit@Literal(index, string) =>
 
           // Fail on any uses of non-binary characters
           string.zipWithIndex.map { case (ch, idx) =>
-            if(ch != '0' && ch != '1') ctx.error(lit, idx, "only '0' and '1' are valid")
+            if(ch != '0' && ch != '1')
+              interpolation.error(lit, idx, "only '0' and '1' are valid")
           }
 
           // Fail if it's the wrong length
-          if(string.length%8 != 0) ctx.abort(lit, 0, "binary size is not an exact number of bytes")
+          if(string.length%8 != 0) interpolation.abort(lit, 0,
+              "binary size is not an exact number of bytes")
 
           // Convert the string to a sequence of assignment operations
           string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
@@ -44,7 +47,7 @@ object binary {
         case hole@Hole(_, _) =>
 
           // We don't support substitutions (yet)
-          ctx.abort(hole, "can't make substitutions")
+          interpolation.abort(hole, "can't make substitutions")
 
       }
 

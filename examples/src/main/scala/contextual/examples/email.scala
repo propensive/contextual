@@ -26,21 +26,21 @@ object email {
 
   object EmailParser extends Interpolator {
 
-    def contextualize(ctx: StaticContext): Seq[ContextType] = {
+    def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
       
-      ctx.parts.foreach {
+      interpolation.parts.foreach {
         case lit@Literal(_, string) =>
           if(validEmail.findFirstMatchIn(string).isEmpty)
-            ctx.abort(lit, 0, "this is not a valid email address")
+            interpolation.abort(lit, 0, "this is not a valid email address")
       
         case hole@Hole(_, _) =>
-          ctx.abort(hole, "substitutions are not supported")
+          interpolation.abort(hole, "substitutions are not supported")
       }
 
       Nil
     }
 
-    def evaluate(contextual: RuntimeContext): EmailAddress =
+    def evaluate(contextual: RuntimeInterpolation): EmailAddress =
       EmailAddress(contextual.parts.mkString)
 
   }

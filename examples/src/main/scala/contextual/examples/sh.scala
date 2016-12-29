@@ -32,28 +32,30 @@ object shell {
     type ContextType = ShellContext
     type Input = String
 
-    def evaluate(ctx: RuntimeContext): Process = {
-      val command = ctx.parts.mkString
+    def evaluate(interpolation: RuntimeInterpolation): Process = {
+      val command = interpolation.parts.mkString
       val (_, params) = parseLiteral(NewParam, command)
       Process(params: _*)
     }
 
-    def contextualize(ctx: StaticContext): Seq[ContextType] = {
-      import ctx.universe.{Literal => _, _}
+    def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
+      import interpolation.universe.{Literal => _, _}
 
-      val (contexts, finalState) = ctx.parts.foldLeft((List[ContextType](), NewParam: ShellContext)) {
+      val (contexts, finalState) = interpolation.parts.foldLeft((List[ContextType](), NewParam:
+          ShellContext)) {
         case ((contexts, state), lit@Literal(_, string)) =>
           val (newState, _) = parseLiteral(state, string)
           (contexts, newState)
 
         case ((contexts, state), hole@Hole(_, _)) =>
-          val newState = hole(state).getOrElse(ctx.abort(hole, "this type cannot be substituted here"))
+          val newState = hole(state).getOrElse(interpolation.abort(hole,
+              "this type cannot be substituted here"))
           (newState :: contexts, newState)
       }
 
       if(finalState == InSingleQuotes || finalState == InDoubleQuotes) {
-        val lit@Literal(_, _) = ctx.parts.last
-        ctx.abort(lit, lit.string.length, "unclosed quoted parameter")
+        val lit@Literal(_, _) = interpolation.parts.last
+        interpolation.abort(lit, lit.string.length, "unclosed quoted parameter")
       }
 
       contexts

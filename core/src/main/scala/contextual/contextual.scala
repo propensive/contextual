@@ -77,18 +77,18 @@ final class Prefix[PrefixContextType <: Context, InterpolatorType <: Interpolato
   * interpolated string. */
 trait Interpolator extends Interpolator.Parts { interpolator =>
 
-  /** The [[RuntimeContext]] type is a representation of the known runtime information about an
-    * interpolated string. Most importantly, this includes the literal parts of the interpolated
-    * string; the constant parts which surround the variables parts that are substituted into
-    * it. The [[RuntimeContext]] type also provides details about the substituted values, in
-    * particular its context (which was determined at compile time).
+  /** The [[RuntimeInterpolation]] type is a representation of the known runtime information
+    * about an interpolated string. Most importantly, this includes the literal parts of the
+    * interpolated string; the constant parts which surround the variables parts that are
+    * substituted into it. The [[RuntimeInterpolation]] type also provides details about the
+    * substituted values, in particular its context (which was determined at compile time).
     *
     * @param literals the literal parts of the interpolated string
     * @param substitutions the substituted values, evaluated to a common [[Input]] type */
-  class RuntimeContext(val literals: Seq[String],
+  class RuntimeInterpolation(val literals: Seq[String],
       val substitutions: Seq[Substitution]) {
 
-    /** A string representation of this [[RuntimeContext]] */
+    /** A string representation of this [[RuntimeInterpolation]] */
     override def toString = Seq("" +: substitutions, literals).transpose.flatten.mkString
 
     /** Provides the sequence of [[Literal]]s and [[Hole]]s in this interpolated string. */
@@ -101,13 +101,13 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     }
   }
 
-  /** The [[StaticContext]] type is a representation of the known compile-time information about
-    * an interpolated string. Most importantly, this includes the literal parts of the
+  /** The [[StaticInterpolation]] type is a representation of the known compile-time information
+    * about an interpolated string. Most importantly, this includes the literal parts of the
     * interpolated string; the constant parts which surround the variables parts that are
-    * substituted into it. The [[StaticContext]] type also provides details about these holes,
-    * specifically the possible set of contexts in which the substituted value may be
+    * substituted into it. The [[StaticInterpolation]] type also provides details about these
+    * holes, specifically the possible set of contexts in which the substituted value may be
     * interpreted. */
-  trait StaticContext {
+  trait StaticInterpolation {
     
     val macroContext: whitebox.Context
     def literals: Seq[String]
@@ -116,7 +116,7 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     def holeTrees: Seq[macroContext.Tree]
     def interpolatorTerm: macroContext.Symbol
 
-    /** A string representation of this [[StaticContext]] */
+    /** A string representation of this [[StaticInterpolation]] */
     override def toString = Seq("" +: holes, literals).transpose.flatten.mkString
 
     /** The universe of the whitebox macro context, should it be required. */
@@ -210,25 +210,33 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * These different contexts are represented by objects which subtype [[Context]], a sequence
     * of which should be returned from this method.
     *
-    * @param staticContext the context of the interpolated string
+    * @param interpolation the context of the interpolated string
     * @return the sequence of [[Context]]s corresponding to the holes
     */
-  def contextualize(staticContext: StaticContext): Seq[ContextType]
+  def contextualize(interpolation: StaticInterpolation): Seq[ContextType]
 
   /** The macro evaluator that defines what code will be generated for this [[Interpolator]].
-    * The  default implementation constructs a new [[RuntimeContext]] object, and invokes a
-    * user-defined method called `evaluate` on the [[Interpolator]].
+    * The  default implementation constructs a new [[RuntimeInterpolation]] object, and invokes
+    * a user-defined method called `evaluate` on the [[Interpolator]].
+    *
+    * Note that the `evaluate` method is not part of the explicit [[Interpolator]] interface,
+    * and can be defined with type parameters or implicit parameters, as desired. It must only
+    * conform to a shape such that it may be invoked (in macro-generated code) with
+    *
+    * <pre>
+    * interpolator.evaluate(interpolation)
+    * </pre>
     *
     * @param contexts the sequence of contexts corresponding to each hole in the interpolated
     * string, as the result of the compile-time invocation of [[contextualize]].
-    * @param staticContext the static context in which evaluation is done
+    * @param interpolation the static context in which evaluation is done
     */
-  def evaluator(contexts: Seq[ContextType], staticContext: StaticContext):
-      staticContext.macroContext.Tree = {
+  def evaluator(contexts: Seq[ContextType], interpolation: StaticInterpolation):
+      interpolation.macroContext.Tree = {
 
-    import staticContext.macroContext.universe._
+    import interpolation.macroContext.universe._
 
-    val substitutions = contexts.zip(staticContext.holeTrees).zipWithIndex.map {
+    val substitutions = contexts.zip(interpolation.holeTrees).zipWithIndex.map {
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         /* TODO: Avoid using runtime reflection to get context objects, if we can. */
@@ -240,15 +248,15 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
 
         val castReflectiveContext = q"$reflectiveContext"
 
-        q"""${staticContext.interpolatorTerm}.Substitution(
+        q"""${interpolation.interpolatorTerm}.Substitution(
           $idx,
           $embedder($castReflectiveContext).apply($value)
         )"""
     }
 
-    q"""${staticContext.interpolatorTerm}.evaluate(
-      new ${staticContext.interpolatorTerm}.RuntimeContext(
-        _root_.scala.collection.Seq(..${staticContext.literals}),
+    q"""${interpolation.interpolatorTerm}.evaluate(
+      new ${interpolation.interpolatorTerm}.RuntimeInterpolation(
+        _root_.scala.collection.Seq(..${interpolation.literals}),
         _root_.scala.collection.Seq(..$substitutions)
       )
     )"""
@@ -267,7 +275,8 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
       * @tparam ContextPair the intersection of "before" and "after" contexts, inferred from the
       * least upper-bound of the [[Case]]s
       * @tparam Input the common input type for this [[Interpolator]]
-      * @return a new [[Embedder]] which handles the type `Value` for a number of [[Context]]s */
+      * @return a new [[Embedder]] which handles the type `Value` for a number of [[Context]]s
+      */
     def apply[ContextPair <: (Context, Context), Input]
         (cases: Case[ContextPair, Value, Input]*):
         Embedder[ContextPair, Value, Input, interpolator.type] =

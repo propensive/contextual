@@ -22,28 +22,28 @@ object regex {
 
   object RegexParser extends Interpolator {
 
-    def contextualize(ctx: StaticContext): Seq[ContextType] = {
-      import ctx.universe.{Literal => _, _}
+    def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
+      import interpolation.universe.{Literal => _, _}
 
-      ctx.parts.foreach {
+      interpolation.parts.foreach {
         case lit@Literal(_, string) =>
-          try Pattern.compile(ctx.literals.head) catch {
+          try Pattern.compile(interpolation.literals.head) catch {
             case p: PatternSyntaxException =>
 
               // We take only the interesting part of the error message
               val message = p.getMessage.split(" near").head
-              ctx.error(lit, p.getIndex - 1, message)
+              interpolation.error(lit, p.getIndex - 1, message)
           }
 
         case hole@Hole(_, _) =>
-          ctx.abort(hole, "substitution is not supported")
+          interpolation.abort(hole, "substitution is not supported")
       }
 
       Nil
     }
 
-    def evaluate(ctx: RuntimeContext): Pattern =
-      Pattern.compile(ctx.parts.mkString)
+    def evaluate(interpolation: RuntimeInterpolation): Pattern =
+      Pattern.compile(interpolation.parts.mkString)
 
   }
 
