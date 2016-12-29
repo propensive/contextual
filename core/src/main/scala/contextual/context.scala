@@ -1,4 +1,4 @@
-/* Contextual, version 0.14. Copyright 2016 Jon Pretty, Propensive Ltd.
+/* Contextual, version 1.0.0. Copyright 2016 Jon Pretty, Propensive Ltd.
  *
  * The primary distribution site is: http://co.ntextu.al/
  *
