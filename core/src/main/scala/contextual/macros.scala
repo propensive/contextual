@@ -17,8 +17,6 @@ package contextual
 import scala.reflect._, macros.whitebox
 import macrocompat.bundle
 
-import language.experimental.macros
-
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
 @bundle
 class Macros(val c: whitebox.Context) {
@@ -54,11 +52,8 @@ class Macros(val c: whitebox.Context) {
       val typeName = javaClassName(tpe.typeSymbol)
       val cls = Class.forName(s"$typeName$$")
 
-      /* It would be nice to avoid the unchecked pattern-match. */
-      cls.getField("MODULE$").get(cls) match { case cls: M => cls }
+      cls.getField("MODULE$").get(cls).asInstanceOf[M]
     }
-
-    val interpolatorName: String = javaClassName(weakTypeOf[I].typeSymbol)
 
     /* Get an instance of the Interpolator class. */
     val interpolator = try getModule[I](weakTypeOf[I]) catch {
@@ -79,15 +74,6 @@ class Macros(val c: whitebox.Context) {
 
         interpolator.Hole(idx, contextObjects)
     }
-
-    val combinedParts: Seq[interpolator.StaticPart] =
-      interpolator.Literal(0, stringLiterals.head) +: Seq(
-        parameterTypes.to[List],
-        stringLiterals.to[List].tail.zipWithIndex.map { case (v, i) =>
-          interpolator.Literal(i + 1, v)
-        }
-      ).transpose.flatten
-
 
     val interpolation: interpolator.StaticInterpolation { val macroContext: c.type } =
       new interpolator.StaticInterpolation {

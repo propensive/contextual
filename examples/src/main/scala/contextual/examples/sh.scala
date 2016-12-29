@@ -39,8 +39,6 @@ object shell {
     }
 
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
-      import interpolation.universe.{Literal => _, _}
-
       val (contexts, finalState) = interpolation.parts.foldLeft((List[ContextType](), NewParam:
           ShellContext)) {
         case ((contexts, state), lit@Literal(_, string)) =>

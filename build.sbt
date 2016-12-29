@@ -29,7 +29,7 @@ lazy val buildSettings = Seq(
   scalaVersion := "2.12.1",
   name := "contextual",
   version := "0.14",
-  scalacOptions ++= Seq("-deprecation", "-feature"),
+  scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible", "-Ywarn-adapted-args"),
   crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))

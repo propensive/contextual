@@ -23,7 +23,6 @@ object regex {
   object RegexParser extends Interpolator {
 
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
-      import interpolation.universe.{Literal => _, _}
 
       interpolation.parts.foreach {
         case lit@Literal(_, string) =>

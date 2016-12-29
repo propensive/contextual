@@ -15,67 +15,25 @@
 package contextual
 
 import scala.reflect._, macros._
-import scala.annotation.implicitNotFound
 
-import language.experimental.macros
-import language.higherKinds
 import language.implicitConversions
-import language.existentials
-
-/** Companion and factory object for the [[Prefix]] class. */
-object Prefix {
-  /** Creates a new [[Prefix]]. This should be applied directly to a named value in an implicit
-    * class that wraps a [[scala.StringContext]] to bind an interpolator object to a prefix of
-    * the given name.
-    *
-    * A typical usage would be the implicit class,
-    *
-    * <pre>
-    * implicit class FooPrefix(ctx: StringContext) {
-    *   val foo = Prefix(FooInterpolator, ctx)
-    * }
-    * </pre>
-    *
-    * @param interpolator the [[Interpolator]] to bind to the prefix
-    * @param stringContext the [[scala.StringContext]] to be wrapped
-    * @return a new instance of a [[Prefix]]
-    */
-  def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[interpolator.ContextType, interpolator.type] =
-    new Prefix(interpolator, stringContext.parts)
-}
-
-/** A [[Prefix]] represents the attachment of an [[Interpolator]] to a [[scala.StringContext]],
-  * typically using an implicit class. It has only a single method, [[apply]], with a signature
-  * that's appropriate for fitting the shape of a desugared interpolated string application.
-  *
-  * @param interpolator the [[Interpolator]] object to bind to this prefix
-  * @param parts a sequence of the literal parts of the interpolated string, taken from the
-  * `parts` value of the [[scala.StringContext]]
-  * @tparam PrefixContextType the context inferred from `interpolator`'s type member
-  * @tparam InterpolatorType the singleton type of the [[Interpolator]]
-  */
-final class Prefix[PrefixContextType <: Context, InterpolatorType <: Interpolator { type
-    ContextType = PrefixContextType }](interpolator: InterpolatorType, parts: Seq[String]) {
-
-  /** The [[apply]] method is typically invoked as a result of the desugaring of a
-    * [[scala.StringContext]] during parsing in Scalac. The method signature takes multiple
-    * [[Interpolator.Embedded]] parameters, which are designed to be created as the result of
-    * applying an implicit conversion, which will only succeed with appropriate
-    * [[Interpolator.Embedding]] implicits for embedding that type within the interpolated
-    * string.
-    *
-    * The method is implemented with the main [[contextual]] macro.
-    * 
-    * @param expressions a sequence of expressions corresponding to each substitution
-    * @return the evaluated result of the [[contextual]] macro */
-  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*): Any =
-    macro Macros.contextual[PrefixContextType, InterpolatorType]
-}
 
 /** An [[Interpolator]] defines the compile-time and runtime behavior when interpreting an
   * interpolated string. */
-trait Interpolator extends Interpolator.Parts { interpolator =>
+trait Interpolator { interpolator =>
+
+  /** The type, which is typically sealed, of all [[Context]]s which may exist for
+    * substitutions into this [[Interpolator]]. */
+  type ContextType <: Context
+
+  /** The common type that substitutions of any supported type will be converted to for
+    * processing at runtime, in the `evaluate` method. This is necessary as embeddings may
+    * be specified using typeclasses for ad-hoc types which are not known when defining the
+    * [[Interpolator]]. For most purposes, `String` is a reasonable choice, but there may
+    * be the need to attach additional metadata to substitutions (which depends on the
+    * original type being substituted), in which case a case class wrapping a `String` with
+    * additional fields may be a better choice. */
+  type Input
 
   /** The [[RuntimeInterpolation]] type is a representation of the known runtime information
     * about an interpolated string. Most importantly, this includes the literal parts of the
@@ -290,6 +248,58 @@ trait Interpolator extends Interpolator.Parts { interpolator =>
     * @tparam Value
     * */
   def embed[Value]: Embedding[Value] = new Embedding()
+
+  /** The common supertype of runtime and compile-time (static) parts of an interpolated
+    * string, namely [[Literal]]s (common to both runtime and compile-time contexts),
+    * [[Hole]]s (compile-time only) and [[Substitution]]s (runtime only). */
+  sealed trait Part extends Product with Serializable
+
+  /** Sealed trait of parts that are known at compile-time. This is only [[Literal]] and
+   *  [[Hole]] values. Note that [[Literal]]s are also available at runtime. */
+  sealed trait StaticPart extends Part with Product with Serializable { def index: Int }
+
+  /** Sealed trait of parts that are known at runtime. This is only [[Literal]] and
+    * [[Substitution]] values. Note that [[Literal]]s are also available at compile-time. */
+  sealed trait RuntimePart extends Part with Product with Serializable { def index: Int }
+
+  /** A [[Hole]] represents all that is known at compile-time about a substitution into an
+    * interpolated string. */
+  case class Hole(index: Int, input: Map[ContextType, ContextType]) extends StaticPart {
+
+    /** A string representation of a hole, indicating its possible contexts */
+    override def toString: String = input.keys.mkString("[", "|", "]")
+
+    /** Gets the post-substitution [[Context]], provided the pre-substitution [[Context]] is
+      * defined for this [[Hole]].
+      *
+      * @param context the pre-substitution [[Context]]
+      * @return the post-substitution [[Context]], or `None` if it is not defined */
+    def apply(context: ContextType): Option[ContextType] = input.get(context)
+  }
+
+  /** Represents a known value (at runtime) that is substituted into an interpolated string.
+    *
+    * @param index the integer index of this substitution within the interpolated string
+    * @param value the substituted value, converted to the common input type */
+  case class Substitution(index: Int, value: Input) extends RuntimePart {
+
+    /** Gets the substituted value. 
+      *
+      * @return the substituted value, converted to the common input type */
+    def apply(): Input = value
+
+    /** The string representation of the substituted value */
+    override def toString = value.toString
+  }
+
+  /** Represents a fixed, constant part of an interpolated string, known at compile-time.
+    *
+    * @param index the integer index of this literal within the interpolated string
+    * @param string the actual string literal */
+  case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
+    /** The string literal */
+    override def toString: String = string
+  }
 }
 
 /** Factory object for creating [[Case]]s. */
@@ -380,15 +390,6 @@ class Embedder[ContextPair <: (Context, Context), Value, Input,
     cases.find(_.context == holeContext).get.conversion
 }
 
-/** A [[Context]] describes the nature of the position in an interpolated string where a
-  * substitution is made, and determines how values of a particular type should be interpreted
-  * in the given position. */
-trait Context {
-  /** A string representation which is meaningful for a singleton-object [[Context]] instance,
-    * calculated by reflecting on its class name. */
-  override def toString: String = getClass.getName.split("\\.").last.dropRight(1)
-}
-
 /** Companion object for the [[Interpolator]], containing related definitions. */
 object Interpolator {
 
@@ -429,76 +430,5 @@ object Interpolator {
       * @param context the [[Context]] to lookup for this embedding
       * @return the common `Input` type for this interpolator */
     def apply(context: Context): Input
-  }
-
-
-  /** Provides case classes representing the literal parts, and interspersed parts of an
-    * interpolated string. */
-  trait Parts {
-
-    /** The type, which is typically sealed, of all [[Context]]s which may exist for
-      * substitutions into this [[Interpolator]]. */
-    type ContextType <: Context
-
-    /** The common type that substitutions of any supported type will be converted to for
-      * processing at runtime, in the `evaluate` method. This is necessary as embeddings may
-      * be specified using typeclasses for ad-hoc types which are not known when defining the
-      * [[Interpolator]]. For most purposes, `String` is a reasonable choice, but there may
-      * be the need to attach additional metadata to substitutions (which depends on the
-      * original type being substituted), in which case a case class wrapping a `String` with
-      * additional fields may be a better choice. */
-    type Input
-
-    /** The common supertype of runtime and compile-time (static) parts of an interpolated
-      * string, namely [[Literal]]s (common to both runtime and compile-time contexts),
-      * [[Hole]]s (compile-time only) and [[Substitution]]s (runtime only). */
-    sealed trait Part extends Product with Serializable
-
-    /** Sealed trait of parts that are known at compile-time. This is only [[Literal]] and
-     *  [[Hole]] values. Note that [[Literal]]s are also available at runtime. */
-    sealed trait StaticPart extends Part with Product with Serializable { def index: Int }
-
-    /** Sealed trait of parts that are known at runtime. This is only [[Literal]] and
-      * [[Substitution]] values. Note that [[Literal]]s are also available at compile-time. */
-    sealed trait RuntimePart extends Part with Product with Serializable { def index: Int }
-
-    /** A [[Hole]] represents all that is known at compile-time about a substitution into an
-      * interpolated string. */
-    case class Hole(index: Int, input: Map[ContextType, ContextType]) extends StaticPart {
-
-      /** A string representation of a hole, indicating its possible contexts */
-      override def toString: String = input.keys.mkString("[", "|", "]")
-
-      /** Gets the post-substitution [[Context]], provided the pre-substitution [[Context]] is
-        * defined for this [[Hole]].
-        *
-        * @param context the pre-substitution [[Context]]
-        * @return the post-substitution [[Context]], or `None` if it is not defined */
-      def apply(context: ContextType): Option[ContextType] = input.get(context)
-    }
-
-    /** Represents a known value (at runtime) that is substituted into an interpolated string.
-      *
-      * @param index the integer index of this substitution within the interpolated string
-      * @param value the substituted value, converted to the common input type */
-    case class Substitution(index: Int, value: Input) extends RuntimePart {
-
-      /** Gets the substituted value. 
-        *
-        * @return the substituted value, converted to the common input type */
-      def apply(): Input = value
-
-      /** The string representation of the substituted value */
-      override def toString = value.toString
-    }
-
-    /** Represents a fixed, constant part of an interpolated string, known at compile-time.
-      *
-      * @param index the integer index of this literal within the interpolated string
-      * @param string the actual string literal */
-    case class Literal(index: Int, string: String) extends StaticPart with RuntimePart {
-      /** The string literal */
-      override def toString: String = string
-    }
   }
 }
