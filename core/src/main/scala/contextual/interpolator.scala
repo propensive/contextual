@@ -197,18 +197,18 @@ trait Interpolator { interpolator =>
     val substitutions = contexts.zip(interpolation.holeTrees).zipWithIndex.map {
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
-        /* TODO: Avoid using runtime reflection to get context objects, if we can. */
-        val reflectiveContextClass =
-          q"_root_.java.lang.Class.forName(${ctx.getClass.getName})"
+        val cls = ctx.getClass
+        val init :+ last = cls.getName.dropRight(1).split("\\.").to[Vector]
 
-        val reflectiveContext =
-          q"""$reflectiveContextClass.getField("MODULE$$").get($reflectiveContextClass)"""
-
-        val castReflectiveContext = q"$reflectiveContext"
+        val elements = init ++ last.split("\\$").to[Vector]
+        
+        val selector = elements.foldLeft(q"_root_": Tree) { case (t, p) =>
+          Select(t, TermName(p))
+        }
 
         q"""${interpolation.interpolatorTerm}.Substitution(
           $idx,
-          $embedder($castReflectiveContext).apply($value)
+          $embedder($selector).apply($value)
         )"""
     }
 
