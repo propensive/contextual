@@ -22,10 +22,24 @@ object Testing {
 
     import contextual.examples._
     import shell._
+    import scala2._
+    import scalac._
 
     sh"foo bar $str baz"
     sh"""a b c d ${"e"} ${"f"}"""
 
+    println(scala"21 + 21") // 42
+
+    val ctx: Context = scalac"object D { def apply(i: Int) = i * 2 }"
+    println(ctx("D(21)")) // 42
+
+    // does not compile
+    // tests.scala:38: Compiler exception error: line 1: not found: value x
+    // scala"x"
+
+    // does not compile
+    // tests.scala:42: Compiler exception error: line -1: expected class or object definition
+    // scalac"x"
   }
 }
 

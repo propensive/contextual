@@ -13,6 +13,7 @@ lazy val examples = project
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
   .settings(moduleName := "contextual-examples")
+  .settings(libraryDependencies += "com.twitter" %% "util-eval" % "6.40.0")
   .settings(quasiQuotesDependencies)
   .dependsOn(core)
 
