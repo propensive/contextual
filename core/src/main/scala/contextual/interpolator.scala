@@ -223,7 +223,7 @@ trait Interpolator { interpolator =>
   /** Factory for creating [[Embedder]]s.
     *
     * @tparam Value the type for which this [[Embedding]] will create [[Embedder]]s for */
-  class Embedding[Value] private[Interpolator]() {
+  class Embedding[Value, Input] private[Interpolator]() {
 
     /** Factory method for creating [[Embedder]]s for embedding values of type `Value` for
       * an [[Interpolator]] of type `InterpolatorType`, typically inferring the type parameters.
@@ -235,7 +235,7 @@ trait Interpolator { interpolator =>
       * @tparam Input the common input type for this [[Interpolator]]
       * @return a new [[Embedder]] which handles the type `Value` for a number of [[Context]]s
       */
-    def apply[ContextPair <: (Context, Context), Input]
+    def apply[ContextPair <: (Context, Context)]
         (cases: Case[ContextPair, Value, Input]*):
         Embedder[ContextPair, Value, Input, interpolator.type] =
       new Embedder(cases)
@@ -247,7 +247,7 @@ trait Interpolator { interpolator =>
     *
     * @tparam Value
     * */
-  def embed[Value]: Embedding[Value] = new Embedding()
+  def embed[Value]: Embedding[Value, Input] = new Embedding()
 
   /** The common supertype of runtime and compile-time (static) parts of an interpolated
     * string, namely [[Literal]]s (common to both runtime and compile-time contexts),
