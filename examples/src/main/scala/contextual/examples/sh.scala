@@ -95,7 +95,7 @@ object shell {
   )
   
   implicit class ShellStringContext(sc: StringContext) {
-    val sh = Prefix(ShellInterpolator, sc)
+    val sh = Prefix.typed[Process](ShellInterpolator, sc)
   }
 
 }

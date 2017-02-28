@@ -35,7 +35,28 @@ object Prefix {
     * @return a new instance of a [[Prefix]]
     */
   def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[interpolator.ContextType, interpolator.type] =
+      Prefix[Any, interpolator.ContextType, interpolator.type] =
+    new Prefix(interpolator, stringContext.parts)
+
+
+  /** Creates a new [[Prefix]] with refined return type of evaluate method. This should be applied
+    * directly to a named value in an implicit class that wraps a [[scala.StringContext]] to bind an
+    * interpolator object to a prefix of the given name.
+    *
+    * A typical usage would be the implicit class,
+    *
+    * <pre>
+    * implicit class FooPrefix(ctx: StringContext) {
+    *   val foo = Prefix.typed[Foo](FooInterpolator, ctx)
+    * }
+    * </pre>
+    *
+    * @param interpolator the [[Interpolator]] to bind to the prefix
+    * @param stringContext the [[scala.StringContext]] to be wrapped
+    * @return a new instance of a [[Prefix]]
+    */
+  def typed[ReturnType](interpolator: Interpolator, stringContext: StringContext):
+      Prefix[ReturnType, interpolator.ContextType, interpolator.type] =
     new Prefix(interpolator, stringContext.parts)
 }
 
@@ -49,7 +70,7 @@ object Prefix {
   * @tparam PrefixContextType the context inferred from `interpolator`'s type member
   * @tparam InterpolatorType the singleton type of the [[Interpolator]]
   */
-final class Prefix[PrefixContextType <: Context, InterpolatorType <: Interpolator { type
+final class Prefix[ReturnType, PrefixContextType <: Context, InterpolatorType <: Interpolator { type
     ContextType = PrefixContextType }](interpolator: InterpolatorType, parts: Seq[String]) {
 
   /** The [[apply]] method is typically invoked as a result of the desugaring of a
@@ -60,9 +81,9 @@ final class Prefix[PrefixContextType <: Context, InterpolatorType <: Interpolato
     * string.
     *
     * The method is implemented with the main [[contextual]] macro.
-    * 
+    *
     * @param expressions a sequence of expressions corresponding to each substitution
     * @return the evaluated result of the [[contextual]] macro */
-  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*): Any =
+  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*): ReturnType =
     macro Macros.contextual[PrefixContextType, InterpolatorType]
 }
