@@ -26,6 +26,8 @@ object email {
 
   object EmailParser extends Interpolator {
 
+    type Output = EmailAddress
+
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
       
       interpolation.parts.foreach {

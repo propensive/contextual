@@ -17,15 +17,16 @@ package contextual.tests
 object Testing {
   
   def main(args: Array[String]): Unit = {
-    
-    val str = "some"
 
     import contextual.examples._
     import shell._
+    import email._
 
-    sh"foo bar $str baz"
-    sh"""a b c d ${"e"} ${"f"}"""
+    val res = email"aaa@ddd.com"
+    val res2 = sh"""a b c d ${"e"} ${"f"}"""
 
+    println(res.address)
+    println(res2.args)
   }
 }
 

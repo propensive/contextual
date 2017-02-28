@@ -35,29 +35,9 @@ object Prefix {
     * @return a new instance of a [[Prefix]]
     */
   def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[Any, interpolator.ContextType, interpolator.type] =
+      Prefix[interpolator.type#Output, interpolator.ContextType, interpolator.type] =
     new Prefix(interpolator, stringContext.parts)
 
-
-  /** Creates a new [[Prefix]] with refined return type of evaluate method. This should be applied
-    * directly to a named value in an implicit class that wraps a [[scala.StringContext]] to bind an
-    * interpolator object to a prefix of the given name.
-    *
-    * A typical usage would be the implicit class,
-    *
-    * <pre>
-    * implicit class FooPrefix(ctx: StringContext) {
-    *   val foo = Prefix.typed[Foo](FooInterpolator, ctx)
-    * }
-    * </pre>
-    *
-    * @param interpolator the [[Interpolator]] to bind to the prefix
-    * @param stringContext the [[scala.StringContext]] to be wrapped
-    * @return a new instance of a [[Prefix]]
-    */
-  def typed[ReturnType](interpolator: Interpolator, stringContext: StringContext):
-      Prefix[ReturnType, interpolator.ContextType, interpolator.type] =
-    new Prefix(interpolator, stringContext.parts)
 }
 
 /** A [[Prefix]] represents the attachment of an [[Interpolator]] to a [[scala.StringContext]],

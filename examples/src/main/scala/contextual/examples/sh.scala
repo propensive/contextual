@@ -31,6 +31,7 @@ object shell {
   object ShellInterpolator extends Interpolator {
     type ContextType = ShellContext
     type Input = String
+    type Output = Process
 
     def evaluate(interpolation: RuntimeInterpolation): Process = {
       val command = interpolation.parts.mkString
@@ -95,7 +96,7 @@ object shell {
   )
   
   implicit class ShellStringContext(sc: StringContext) {
-    val sh = Prefix.typed[Process](ShellInterpolator, sc)
+    val sh = Prefix(ShellInterpolator, sc)
   }
 
 }

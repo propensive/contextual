@@ -35,6 +35,12 @@ trait Interpolator { interpolator =>
     * additional fields may be a better choice. */
   type Input
 
+  /** The type that will be used for refining return type of the evaluated result of the [[contextual]] macro.
+    * This type should be equal to the return type of the `evaluate` method. If the `evaluate` method
+    * isn't defined the default value should be `Any`
+    */
+  type Output
+
   /** The [[RuntimeInterpolation]] type is a representation of the known runtime information
     * about an interpolated string. Most importantly, this includes the literal parts of the
     * interpolated string; the constant parts which surround the variables parts that are

@@ -20,6 +20,8 @@ object binary {
 
   object BinParser extends Interpolator {
 
+    type Output = Any
+
     def contextualize(interpolation: StaticInterpolation) = Nil
 
     override def evaluator(contexts: Seq[ContextType], interpolation: StaticInterpolation):

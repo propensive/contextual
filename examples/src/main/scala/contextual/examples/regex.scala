@@ -18,9 +18,12 @@ import contextual._
 
 import java.util.regex._
 
+
 object regex {
 
   object RegexParser extends Interpolator {
+
+    type Output = Any
 
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
 
