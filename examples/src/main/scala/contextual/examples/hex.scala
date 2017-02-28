@@ -20,8 +20,6 @@ object hex {
 
   object HexParser extends Interpolator {
 
-    type Output = Any
-
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = Nil
 
     override def evaluator(contexts: Seq[ContextType], interpolation: StaticInterpolation):

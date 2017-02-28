@@ -35,7 +35,7 @@ object Prefix {
     * @return a new instance of a [[Prefix]]
     */
   def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[interpolator.type#Output, interpolator.ContextType, interpolator.type] =
+      Prefix[interpolator.Output, interpolator.ContextType, interpolator.type] =
     new Prefix(interpolator, stringContext.parts)
 
 }
@@ -50,8 +50,9 @@ object Prefix {
   * @tparam PrefixContextType the context inferred from `interpolator`'s type member
   * @tparam InterpolatorType the singleton type of the [[Interpolator]]
   */
-final class Prefix[ReturnType, PrefixContextType <: Context, InterpolatorType <: Interpolator { type
-    ContextType = PrefixContextType }](interpolator: InterpolatorType, parts: Seq[String]) {
+final class Prefix[OutputType, PrefixContextType <: Context, InterpolatorType <: Interpolator {
+    type ContextType = PrefixContextType; type Output = OutputType }]
+    (interpolator: InterpolatorType, parts: Seq[String]) {
 
   /** The [[apply]] method is typically invoked as a result of the desugaring of a
     * [[scala.StringContext]] during parsing in Scalac. The method signature takes multiple
@@ -64,6 +65,6 @@ final class Prefix[ReturnType, PrefixContextType <: Context, InterpolatorType <:
     *
     * @param expressions a sequence of expressions corresponding to each substitution
     * @return the evaluated result of the [[contextual]] macro */
-  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*): ReturnType =
-    macro Macros.contextual[PrefixContextType, InterpolatorType]
+  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*):
+      OutputType = macro Macros.contextual[PrefixContextType, InterpolatorType]
 }

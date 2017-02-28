@@ -23,8 +23,6 @@ object regex {
 
   object RegexParser extends Interpolator {
 
-    type Output = Any
-
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
 
       interpolation.parts.foreach {
