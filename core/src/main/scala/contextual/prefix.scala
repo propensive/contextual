@@ -35,7 +35,7 @@ object Prefix {
     * @return a new instance of a [[Prefix]]
     */
   def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[interpolator.type#Output, interpolator.ContextType, interpolator.type] =
+      Prefix[interpolator.Output, interpolator.ContextType, interpolator.type] =
     new Prefix(interpolator, stringContext.parts)
 
 }
