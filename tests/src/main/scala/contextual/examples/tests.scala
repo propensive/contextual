@@ -21,12 +21,25 @@ object Testing {
     import contextual.examples._
     import shell._
     import email._
+    import datetime._
 
     val res = email"aaa@ddd.com"
     val res2 = sh"""a b c d ${"e"} ${"f"}"""
 
     println(res.address)
     println(res2.args)
+
+    val date = datetime"2017-04-15T12:00:00"
+
+    val month = 4
+    val date2 = datetime"2017-$month-15T12:00:00"
+
+    println(date2)
+// The following expressions will produce compile errors
+//    val wrongdate1 = datetime"2017-04-15T12:00"
+//    val wrongdate2 = datetime"2017-04-15T12:00:00"
+//    val wrongdate3 = datetime"2017-13-15T12:00:00"
+
   }
 }
 
