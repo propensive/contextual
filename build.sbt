@@ -1,36 +1,55 @@
 import com.typesafe.sbt.pgp.PgpKeys.publishSigned
 import ReleaseTransformations._
 
-lazy val core = project
+import sbtcrossproject.{crossProject, CrossType}
+
+lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
   .in(file("core"))
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
   .settings(scalaMacroDependencies: _*)
   .settings(moduleName := "contextual")
+  .nativeSettings(nativeSettings)
 
-lazy val examples = project
+lazy val coreJVM = core.jvm
+lazy val coreJS = core.js
+lazy val coreNative = core.native
+
+lazy val examples = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
   .in(file("examples"))
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
   .settings(moduleName := "contextual-examples")
   .settings(quasiQuotesDependencies)
+  .nativeSettings(nativeSettings)
   .dependsOn(core)
 
-lazy val tests = project
+lazy val examplesJVM = examples.jvm
+lazy val examplesJS = examples.js
+lazy val examplesNative = examples.native
+
+lazy val tests = crossProject(JVMPlatform, NativePlatform)
+  .crossType(CrossType.Pure)
   .in(file("tests"))
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
   .settings(quasiQuotesDependencies)
+  .nativeSettings(nativeSettings)
   .dependsOn(examples)
+
+lazy val testsJVM = tests.jvm
+lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.1",
+  scalaVersion := "2.12.2",
   name := "contextual",
   version := "1.0.1",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible", "-Ywarn-adapted-args"),
-  crossScalaVersions := Seq("2.10.6", "2.11.8", "2.12.1"),
+  crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
 )
@@ -86,6 +105,12 @@ import java.io.File
 def crossVersionSharedSources()  = Seq(
  (unmanagedSourceDirectories in Compile) ++= { (unmanagedSourceDirectories in Compile ).value.map {
      dir:File => new File(dir.getPath + "_" + scalaBinaryVersion.value)}}
+)
+
+lazy val nativeSettings: Seq[Setting[_]] = Seq(
+  // Scala Native not yet available for 2.12.x, so override the versions
+  scalaVersion := "2.11.11",
+  crossScalaVersions := Seq("2.10.6", "2.11.11")
 )
 
 lazy val quasiQuotesDependencies: Seq[Setting[_]] =
