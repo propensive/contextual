@@ -14,19 +14,9 @@
  */
 package contextual.tests
 
-object Testing {
-  
-  def main(args: Array[String]): Unit = {
+import contextual.examples.Tests
 
-    import contextual.examples._
-    import shell._
-    import email._
-
-    val res = email"aaa@ddd.com"
-    val res2 = sh"""a b c d ${"e"} ${"f"}"""
-
-    println(res.address)
-    println(res2.args)
-  }
+object TestingApp extends App {
+  Tests.testEmailAndShell()
 }
 

@@ -30,8 +30,8 @@ lazy val examplesJVM = examples.jvm
 lazy val examplesJS = examples.js
 lazy val examplesNative = examples.native
 
-lazy val tests = crossProject(JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+  .crossType(CrossType.Full)
   .in(file("tests"))
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
@@ -41,6 +41,7 @@ lazy val tests = crossProject(JVMPlatform, NativePlatform)
   .dependsOn(examples)
 
 lazy val testsJVM = tests.jvm
+lazy val testsJS = tests.js
 lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
