@@ -61,7 +61,7 @@ class Macros(val c: whitebox.Context) {
     }
 
     val parameterTypes: Seq[interpolator.Hole] = appliedParameters.zipWithIndex.map {
-      case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
+      case (tree@Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
           case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
@@ -69,7 +69,28 @@ class Macros(val c: whitebox.Context) {
         }
 
         val contextObjects = types.map { t =>
-          (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
+          val beforeContextType = t.typeArgs(0)
+          val inputSubtype = t.typeArgs(1)
+
+          val holeTransitionType = weakTypeOf[interpolator.HoleTransition[_, _]]
+
+          val appliedHoleTransitionType = appliedType(holeTransitionType, inputSubtype,
+              beforeContextType)
+
+          val implicitType =
+            try c.inferImplicitValue(appliedHoleTransitionType, false, false).tpe catch {
+              case e: Exception =>
+                val inputTypeName = inputSubtype.toString.split("\\.").last
+                val beforeContextTypeName = beforeContextType.toString.split("\\.").init.last
+                
+                c.abort(tree.pos, "could not find a unique implicit instance of "+
+                    s"HoleTransition for $inputTypeName substitutions in "+
+                    s"$beforeContextTypeName position")
+            }
+          
+          val transitionType = implicitType.member(tq"Out".name).asType.toType.dealias
+         
+          (getModule[C](beforeContextType), getModule[C](transitionType))
         }.toMap
 
         interpolator.Hole(idx, contextObjects)

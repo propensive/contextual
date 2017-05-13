@@ -41,6 +41,17 @@ trait Interpolator { interpolator =>
     */
   type Output
 
+  object HoleTransition {
+    implicit def genericHoleTransition[InputType <: Input, SameContext <: ContextType]: HoleTransition[InputType, SameContext] { type Out = SameContext } = new HoleTransition[InputType, SameContext]() { type Out = SameContext }
+  }
+
+  /** Class representing, at the type-level, the transition from the Context prior to the
+    * substitution, [[PriorContext]], to a different context, [[Out]], after the
+    * substitution. */
+  class HoleTransition[+InputType <: Input, PriorContext <: ContextType]() {
+    type PostContext <: ContextType
+  }
+
   /** The [[RuntimeInterpolation]] type is a representation of the known runtime information
     * about an interpolated string. Most importantly, this includes the literal parts of the
     * interpolated string; the constant parts which surround the variables parts that are
@@ -226,6 +237,13 @@ trait Interpolator { interpolator =>
     )"""
   }
 
+  class HoleTransitioning[InputType <: Input]() {
+    def apply[BeforeContext <: ContextType, AfterContext <: ContextType]
+        (before: BeforeContext, after: AfterContext):
+        HoleTransition[InputType, BeforeContext] { type Out = AfterContext } =
+      new HoleTransition[InputType, BeforeContext] { type Out = AfterContext }
+  }
+
   /** Factory for creating [[Embedder]]s.
     *
     * @tparam Value the type for which this [[Embedding]] will create [[Embedder]]s for */
@@ -236,12 +254,12 @@ trait Interpolator { interpolator =>
       *
       * @param cases the functions for converting the `Value` type to `Input` for each supported
       * [[Context]]
-      * @tparam ContextPair the intersection of "before" and "after" contexts, inferred from the
-      * least upper-bound of the [[Case]]s
+      * @tparam ContextPair the intersection of "before" contexts, inferred from the least
+      * upper-bound of the [[Case]]s
       * @tparam Input the common input type for this [[Interpolator]]
       * @return a new [[Embedder]] which handles the type `Value` for a number of [[Context]]s
       */
-    def apply[ContextPair <: (Context, Context)]
+    def apply[ContextPair <: (Context, Input)]
         (cases: Case[ContextPair, Value, Input]*):
         Embedder[ContextPair, Value, Input, interpolator.type] =
       new Embedder(cases)
@@ -254,6 +272,14 @@ trait Interpolator { interpolator =>
     * @tparam Value
     * */
   def embed[Value]: Embedding[Value, Input] = new Embedding()
+
+  /** Intermediate factory method for making a new [[HoleTransition]] typeclass instance, via
+    * the [[HoleTransitioning]] class, which only exists as a means of creating a new
+    * [[HoleTransition]] instance, with one type specified, and the others inferred.
+    *
+    * @tparam InputType  the subtype of [[Input]] to specify a transition for */
+  def holeTransition[InputType <: Input]: HoleTransitioning[InputType] =
+    new HoleTransitioning()
 
   /** The common supertype of runtime and compile-time (static) parts of an interpolated
     * string, namely [[Literal]]s (common to both runtime and compile-time contexts),
@@ -309,14 +335,15 @@ trait Interpolator { interpolator =>
 }
 
 /** Factory object for creating [[Case]]s. */
-object Case {
+object on {
   /** Creates a new [[Case]] for instances of type `Value`, specifying the `context`
-    * in which that type may be substituted, and `after` context.
+    * in which that type may be substituted, the precice subtype of [[Input]] returned by the
+    * conversion function.
     *
     * For example, the case defined by,
     *
     * <pre>
-    * Case(Param, AfterParam) { (p: Int) =&gt; s"'\$p'" }
+    * Case(Param) { (p: Int) =&gt; s"'\$p'" }
     * </pre>
     *
     * handles substitutions at a hole with a hypothetical `Param` [[Context]] of integer
@@ -348,9 +375,9 @@ object Case {
     * @tparam Input the common input type to which all substitutions are converted, often (but
     * not always) `String`
     * @return a new [[Case]] for handling embedding a `Value` in the specified [[Context]] */
-  def apply[Before <: Context, After <: Context, Value, Input](context: Before, after: After)
-      (conversion: Value => Input): Case[(Before, After), Value, Input] =
-    new Case(context, after, conversion)
+  def apply[Before <: Context, Value, Input](context: Before)
+      (conversion: Value => Input): Case[(Before, Input), Value, Input] =
+    new Case(context, conversion)
 }
 
 /** A [[Case]] specifies for a particular [[Context]] how a value of type `Value` should
@@ -364,8 +391,8 @@ object Case {
   * @tparam Input the common input type to which all substitutions are converted for this
   * [[Interpolator]], often (but not always) `String`
   * */
-class Case[-ContextPair <: (Context, Context), -Value, +Input] private[contextual]
-    (val context: Context, val after: Context, val conversion: Value => Input)
+class Case[-ContextPair <: (Context, Input), -Value, +Input] private[contextual]
+    (val context: Context, val conversion: Value => Input)
 
 /** An [[Embedder]] defines, for an [[Interpolator]], `InterpolatorType`, a type `Value` should
   * be converted to the common input type `Input`, when substituted into different context
@@ -380,7 +407,7 @@ class Case[-ContextPair <: (Context, Context), -Value, +Input] private[contextua
   * [[Interpolator]]
   * @tparam InterpolatorType the [[Interpolator]] singleton type for which this [[Embedder]] is
   * defining substitution functions */
-class Embedder[ContextPair <: (Context, Context), Value, Input,
+class Embedder[ContextPair <: (Context, Input), Value, Input,
     InterpolatorType <: Interpolator](val cases: Seq[Case[ContextPair, Value, Input]]) {
 
   /** Retrieve the conversion function from the `Value` type to the `Input` type for the
@@ -392,7 +419,7 @@ class Embedder[ContextPair <: (Context, Context), Value, Input,
     * Context
     */
   def apply[HoleContext](holeContext: HoleContext)
-      (implicit evidence: ContextPair <:< (HoleContext, Context)): Value => Input =
+      (implicit evidence: ContextPair <:< (HoleContext, Input)): Value => Input =
     cases.find(_.context == holeContext).get.conversion
 }
 
@@ -406,8 +433,8 @@ object Interpolator {
     * @param value the value of type `Value` being embedded
     * @param embedder the implicit [[Embedder]] for values of type `Value`, whose existence (or
     * not) determines whether embedding of the `Value` type is possible
-    * @tparam ContextPair the inferred intersection of "before" and "after" contexts for the
-    * embedding, inferred by the implicit [[Embedder]] instance
+    * @tparam ContextPair the inferred intersection of "before" contexts for the embedding,
+    * inferred by the implicit [[Embedder]] instance
     * @tparam Value the type of the value being embedded, inferred from the type being
     * substituted into the interpolated string
     * @tparam Input the common type to which all substitutions are converted for this
@@ -417,7 +444,7 @@ object Interpolator {
     * @return an [[Embedded]] instance, matching the required type of the holes in the
     * interpolated string
     */
-  implicit def embed[ContextPair <: (Context, Context), Value, Input,
+  implicit def embed[ContextPair <: (Context, Input), Value, Input,
       InterpolatorType <: Interpolator](value: Value)
       (implicit embedder: Embedder[ContextPair, Value, Input, InterpolatorType]):
       Embedded[Input, InterpolatorType] =
