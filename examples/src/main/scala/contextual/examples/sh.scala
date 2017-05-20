@@ -28,13 +28,20 @@ object shell {
   case object InUnquotedParam extends ShellContext
   case object NewParam extends ShellContext
 
-  implicit val newParamToUnquote =
-    ShellInterpolator.holeTransition(NewParam, InUnquotedParam)
-
   object ShellInterpolator extends Interpolator {
     type ContextType = ShellContext
     type Input = String
     type Output = Process
+  
+    implicit val embedStrings = ShellInterpolator.embed[String](
+      on(NewParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
+      on(InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
+      on(InSingleQuotes) { s => s.replaceAll("'", """'"'"'""") },
+      on(InDoubleQuotes) { s => s.replaceAll("\\\"", "\\\\\"") }
+    )
+    
+    implicit val newParamToUnquote =
+      ShellInterpolator.holeTransition(NewParam, InUnquotedParam)
 
     def evaluate(interpolation: RuntimeInterpolation): Process = {
       val command = interpolation.parts.mkString
@@ -91,13 +98,6 @@ object shell {
       }
     }
 
-  implicit val embedStrings = ShellInterpolator.embed[String](
-    on(NewParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
-    on(InUnquotedParam) { s => '"'+s.replaceAll("\\\"", "\\\\\"")+'"' },
-    on(InSingleQuotes) { s => s.replaceAll("'", """'"'"'""") },
-    on(InDoubleQuotes) { s => s.replaceAll("\\\"", "\\\\\"") }
-  )
-  
   implicit class ShellStringContext(sc: StringContext) {
     val sh = Prefix(ShellInterpolator, sc)
   }

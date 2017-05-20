@@ -41,9 +41,7 @@ trait Interpolator { interpolator =>
     */
   type Output
 
-  object HoleTransition {
-    implicit def genericHoleTransition[InputType <: Input, SameContext <: ContextType]: HoleTransition[InputType, SameContext] { type Out = SameContext } = new HoleTransition[InputType, SameContext]() { type Out = SameContext }
-  }
+  implicit def genericHoleTransition[InputType <: Input, SameContext <: ContextType]: HoleTransition[InputType, SameContext] { type Out = SameContext } = new HoleTransition[InputType, SameContext]() { type Out = SameContext }
 
   /** Class representing, at the type-level, the transition from the Context prior to the
     * substitution, [[PriorContext]], to a different context, [[Out]], after the
