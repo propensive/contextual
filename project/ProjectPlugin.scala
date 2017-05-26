@@ -20,9 +20,7 @@ object ProjectPlugin extends AutoPlugin {
     sonatypeGithub := "propensive" -> "contextual",
     licenses := Seq(Apache2),
     scalaVersion := "2.12.2",
-    name := "contextual",
-    scalacOptions ++= Seq("-Ywarn-value-discard", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible"),
-    crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2")
+    name := "contextual"
   )
 
   // NOTE: everything in here is applied to every project (a better `commonSettings`)
