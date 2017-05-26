@@ -1,4 +1,5 @@
-addSbtPlugin("com.fommil" % "sbt-sensible" % "1.2.0")
+addSbtPlugin("com.fommil"   % "sbt-sensible" % "1.2.0")
+addSbtPlugin("com.eed3si9n" % "sbt-doge"     % "0.1.5")
 
 addSbtPlugin("com.geirsson" % "sbt-scalafmt" % "0.4.7")
 

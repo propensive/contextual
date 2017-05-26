@@ -4,6 +4,7 @@ import sbt.Keys._
 import fommil.SensiblePlugin
 import fommil.SonatypeKeys._
 import sbtcrossproject._
+import sbtdoge._
 import scala.scalanative.sbtplugin.NativePlatform
 import scalajscrossproject.JSPlatform
 
@@ -19,12 +20,13 @@ object ProjectPlugin extends AutoPlugin {
     organization := "com.propensive",
     sonatypeGithub := "propensive" -> "contextual",
     licenses := Seq(Apache2),
-    scalaVersion := "2.12.2",
+    scalaVersion := "2.11.11",
     name := "contextual"
   )
 
   // NOTE: everything in here is applied to every project (a better `commonSettings`)
   override val projectSettings = Seq(
+    crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2"),
     moduleName := (name in ThisBuild).value + "-" + name.value
   )
 
@@ -47,6 +49,6 @@ object ProjectPluginKeys {
 
   // it's less code to duplicate the project name than to use the macro
   def crossProj(dir: String, t: CrossType = CrossType.Pure) =
-    CrossProject(dir, file(dir), t, JSPlatform, JVMPlatform, NativePlatform)
+    CrossProject(dir, file(dir), t, JSPlatform, JVMPlatform, NativePlatform).enablePlugins(CrossPerProjectPlugin)
 
 }

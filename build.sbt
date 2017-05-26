@@ -13,18 +13,18 @@ val coreJVM = core.jvm
 val coreJS = core.js
 val coreNative = core.native
 
-val examples = crossProj("examples").settings(quasiQuotes).dependsOn(core)
+val examples =
+  crossProj("examples")
+  .enablePlugins(NoPublish)
+  .settings(quasiQuotes)
+  .dependsOn(core)
 
 val examplesJVM = examples.jvm
 val examplesJS = examples.js
 val examplesNative = examples.native
 
 val tests = crossProj("tests", sbtcrossproject.CrossType.Full)
-  .settings(
-    publish := (),
-    publishLocal := (),
-    publishArtifact := false
-  )
+  .enablePlugins(NoPublish)
   .settings(quasiQuotes)
   .dependsOn(examples)
 

@@ -10,7 +10,6 @@ object NativeWorkarounds extends AutoPlugin {
 
   override def projectSettings = Seq(
     // Scala Native not yet available for 2.12.x
-    scalaVersion := "2.11.11",
     crossScalaVersions := Seq("2.11.11")
   )
 
