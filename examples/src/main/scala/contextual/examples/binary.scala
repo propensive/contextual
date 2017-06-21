@@ -18,8 +18,12 @@ import contextual._
 
 object binary {
 
-  object BinParser extends Interpolator {
+  sealed trait BinaryReprContext extends Context
+  case object BinaryReprHole extends BinaryReprContext
 
+  object BinParser extends Interpolator {
+    type ContextType = BinaryReprContext
+    type Input = String
     type Output = Array[Byte]
 
     def contextualize(interpolation: StaticInterpolation) = Nil
@@ -28,8 +32,16 @@ object binary {
         interpolation.universe.Tree = {
       import interpolation.universe.{Literal => _, _}
 
-      val bytes = interpolation.parts.flatMap {
-        case lit@Literal(index, string) =>
+      val substitutions = interpolation.holeTrees.zipWithIndex.map {
+        case (Apply(Apply(_, List(value)), List(embedder)), idx) =>
+          q"""${interpolation.interpolatorTerm}.Substitution(
+            $idx,
+            $value
+          ).value"""
+      }
+
+      val (_, litSize, res) = interpolation.parts.foldLeft((substitutions, 0, Seq[Tree]())) {
+        case ((substitutions, litSize, finalTree), lit@Literal(index, string)) =>
 
           // Fail on any uses of non-binary characters
           string.zipWithIndex.map { case (ch, idx) =>
@@ -37,33 +49,35 @@ object binary {
               interpolation.error(lit, idx, "only '0' and '1' are valid")
           }
 
-          // Fail if it's the wrong length
-          if(string.length%8 != 0) interpolation.abort(lit, 0,
-              "binary size is not an exact number of bytes")
+          (substitutions, litSize + string.size, finalTree :+ q"finalStr += $string")
 
-          // Convert the string to a sequence of assignment operations
-          string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
-            case (byte, idx) => q"array($idx) = $byte"
-          }
+        case ((hSubstition :: tSubstitutions, litSize, finalTree), hole@Hole(_, _)) =>
+          (tSubstitutions, litSize, finalTree :+ q"""{
+              val v = $hSubstition
+              if (v.exists(c => c != '1' && c != '0'))
+                throw new java.lang.IllegalArgumentException("only '0' and '1' are valid")
+              finalStr += v
+            }""")
 
-        case hole@Hole(_, _) =>
-
-          // We don't support substitutions (yet)
-          interpolation.abort(hole, "can't make substitutions")
-
+        case (_, hole@Hole(_, _)) =>
+          interpolation.abort(hole, "found a hole with no valid substitution to include")
       }
 
-      val size = bytes.size
+      if (substitutions.isEmpty && litSize % 8 != 0)
+        interpolation.abort(interpolation.parts.head.asInstanceOf[Literal], 0,
+                            "binary size is not an exact number of bytes")
 
-      // The code that will be evaluated at runtime
       q"""{
-        val array = new Array[Byte]($size)
-        ..$bytes
-
-        array
+        var finalStr = ""
+        ..$res
+        finalStr.grouped(8).map(Integer.parseInt(_, 2).toByte).toArray
       }"""
     }
   }
+
+  implicit val embedStrings = BinParser.embed[String](
+    Case(BinaryReprHole, BinaryReprHole) { identity }
+  )
 
   implicit class BinaryStringContext(sc: StringContext) { val bin = Prefix(BinParser, sc) }
 }

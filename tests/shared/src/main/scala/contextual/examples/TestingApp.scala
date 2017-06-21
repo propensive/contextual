@@ -18,5 +18,6 @@ import contextual.examples.Tests
 
 object TestingApp extends App {
   Tests.testEmailAndShell()
+  Tests.testBinary()
 }
 
