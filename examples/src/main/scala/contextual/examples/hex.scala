@@ -30,15 +30,26 @@ object hex {
 
       val bytes = interpolation.parts.flatMap {
         case lit@Literal(index, string) =>
-          string.toLowerCase.zipWithIndex.foreach { case (ch, idx) =>
-            if(ch < 48 || (ch > 57 && ch < 97) || ch > 102)
-              interpolation.error(lit, idx, "bad hexadecimal digit")
+          val hexString =
+            if(string.startsWith("0x")) string.drop(2)
+            else if (string.startsWith("#")) string.drop(1)
+            else string
+          val invalidDigits = hexString.zipWithIndex.filterNot { case (ch, _) =>
+            val lowerCh = ch.toLower
+            lowerCh < 48 || (lowerCh > 57 && ch < 97) || lowerCh > 102
           }
 
-          if(string.length%2 != 0) interpolation.abort(lit, 0,
+          invalidDigits.foreach { case (ch, idx) =>
+            interpolation.error(lit, idx, "bad hexadecimal digit")
+          }
+
+          if(invalidDigits.nonEmpty) interpolation.abort(lit, 0,
+            "hexadecimal string has invalid digits")
+
+          if(hexString.length%2 != 0) interpolation.abort(lit, 0,
               "hexadecimal size is not an exact number of bytes")
 
-          string.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
+          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
