@@ -30,7 +30,7 @@ object hex {
 
       val bytes = interpolation.parts.flatMap {
         case lit@Literal(index, string) =>
-          string.zipWithIndex.foreach { case (ch, idx) =>
+          string.toLowerCase.zipWithIndex.foreach { case (ch, idx) =>
             if(ch < 48 || (ch > 57 && ch < 97) || ch > 102)
               interpolation.error(lit, idx, "bad hexadecimal digit")
           }
