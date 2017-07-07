@@ -4,7 +4,6 @@ package contextual.examples
   * Created by marius on 03.05.17.
   */
 object Tests {
-  import contextual.examples._
   import shell._
   import email._
 
