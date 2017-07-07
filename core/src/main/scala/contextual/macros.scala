@@ -50,9 +50,14 @@ class Macros(val c: whitebox.Context) {
 
     def getModule[M](tpe: Type): M = {
       val typeName = javaClassName(tpe.typeSymbol)
-      val cls = Class.forName(s"$typeName$$")
 
-      cls.getField("MODULE$").get(cls).asInstanceOf[M]
+      try {
+        val cls = Class.forName(s"$typeName$$")
+        cls.getField("MODULE$").get(cls).asInstanceOf[M]
+      } catch {
+        case e: ClassNotFoundException =>
+          c.abort(c.enclosingPosition, s"""Class "${cls}" could not be found. This usually means you are trying to use an interpolator in the same compilation unit as the one in which you defined it. Please try moving interpolator definitions to a separate (sub)project. Details: https://github.com/propensive/contextual/issues/4""")
+      }
     }
 
     /* Get an instance of the Interpolator class. */
