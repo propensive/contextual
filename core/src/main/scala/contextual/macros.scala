@@ -56,7 +56,7 @@ class Macros(val c: whitebox.Context) {
         cls.getField("MODULE$").get(cls).asInstanceOf[M]
       } catch {
         case e: ClassNotFoundException =>
-          c.abort(c.enclosingPosition, s"""Class "${typeName}" could not be found. This usually means you are trying to use an interpolator in the same compilation unit as the one in which you defined it. Please try moving interpolator definitions to a separate (sub)project. Details: https://github.com/propensive/contextual/issues/4""")
+          c.abort(c.enclosingPosition, s"""Class "${typeName}" could not be found. This usually means you are trying to use an interpolator in the same compilation unit as the one in which you defined it. Please try compiling interpolators first, separately from the code using them.""")
       }
     }
 
