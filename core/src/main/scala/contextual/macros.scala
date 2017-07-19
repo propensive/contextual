@@ -27,7 +27,8 @@ class Macros(val c: whitebox.Context) {
 
     /* Get the string literals from the constructed `StringContext`. */
     val astLiterals = c.prefix.tree match {
-      case Select(Apply(_, List(Apply(_, lits))), _) => lits
+      case Select(Apply(_, List(Apply(_, lits))), _)           => lits
+      case Select(Apply(Apply(_, List(Apply(_, lits))), _), _) => lits
     }
 
     val stringLiterals: Seq[String] = astLiterals.map {
