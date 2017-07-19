@@ -94,6 +94,12 @@ class Macros(val c: whitebox.Context) {
 
     val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(interpolation)
 
+    if(contexts.size != interpolation.holes.size)
+      c.abort(
+        c.enclosingPosition,
+        s"`contextualize` must return exactly one ContextType for each hole"
+      )
+
     interpolator.evaluator(contexts, interpolation)
   }
 }
