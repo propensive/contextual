@@ -51,9 +51,14 @@ class Macros(val c: whitebox.Context) {
 
     def getModule[M](tpe: Type): M = {
       val typeName = javaClassName(tpe.typeSymbol)
-      val cls = Class.forName(s"$typeName$$")
 
-      cls.getField("MODULE$").get(cls).asInstanceOf[M]
+      try {
+        val cls = Class.forName(s"$typeName$$")
+        cls.getField("MODULE$").get(cls).asInstanceOf[M]
+      } catch {
+        case e: ClassNotFoundException =>
+          c.abort(c.enclosingPosition, s"""Class "${typeName}" could not be found. This usually means you are trying to use an interpolator in the same compilation unit as the one in which you defined it. Please try compiling interpolators first, separately from the code using them.""")
+      }
     }
 
     /* Get an instance of the Interpolator class. */
