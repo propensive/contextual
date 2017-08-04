@@ -31,13 +31,14 @@ lazy val examplesJS = examples.js
 lazy val examplesNative = examples.native
 
 lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Full)
+  .crossType(CrossType.Pure)
   .in(file("tests"))
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
   .settings(quasiQuotesDependencies)
   .nativeSettings(nativeSettings)
+  .jsSettings(scalaJSUseMainModuleInitializer := true)
   .dependsOn(examples)
 
 lazy val testsJVM = tests.jvm
@@ -46,11 +47,11 @@ lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.2",
+  scalaVersion := "2.12.3",
   name := "contextual",
   version := "1.0.1",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible", "-Ywarn-adapted-args"),
-  crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.2"),
+  crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.3"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
 )
