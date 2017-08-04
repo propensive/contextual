@@ -34,9 +34,10 @@ object hex {
             if(string.startsWith("0x")) string.drop(2)
             else if (string.startsWith("#")) string.drop(1)
             else string
+          
           val invalidDigits = hexString.zipWithIndex.filterNot { case (ch, _) =>
             val lowerCh = ch.toLower
-            lowerCh < 48 || (lowerCh > 57 && ch < 97) || lowerCh > 102
+            !(lowerCh < 48 || (lowerCh > 57 && ch < 97) || lowerCh > 102)
           }
 
           invalidDigits.foreach { case (ch, idx) =>
