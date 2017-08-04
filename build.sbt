@@ -31,13 +31,14 @@ lazy val examplesJS = examples.js
 lazy val examplesNative = examples.native
 
 lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Full)
+  .crossType(CrossType.Pure)
   .in(file("tests"))
   .settings(buildSettings: _*)
   .settings(noPublishSettings: _*)
   .settings(moduleName := "contextual-tests")
   .settings(quasiQuotesDependencies)
   .nativeSettings(nativeSettings)
+  .jsSettings(scalaJSUseMainModuleInitializer := true)
   .dependsOn(examples)
 
 lazy val testsJVM = tests.jvm
