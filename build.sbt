@@ -16,19 +16,19 @@ lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
 lazy val coreNative = core.native
 
-lazy val examples = crossProject(JSPlatform, JVMPlatform, NativePlatform)
+lazy val data = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
-  .in(file("examples"))
+  .in(file("data"))
   .settings(buildSettings: _*)
   .settings(publishSettings: _*)
-  .settings(moduleName := "contextual-examples")
+  .settings(moduleName := "contextual-data")
   .settings(quasiQuotesDependencies)
   .nativeSettings(nativeSettings)
   .dependsOn(core)
 
-lazy val examplesJVM = examples.jvm
-lazy val examplesJS = examples.js
-lazy val examplesNative = examples.native
+lazy val dataJVM = data.jvm
+lazy val dataJS = data.js
+lazy val dataNative = data.native
 
 lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .crossType(CrossType.Pure)
@@ -39,7 +39,7 @@ lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
   .settings(quasiQuotesDependencies)
   .nativeSettings(nativeSettings)
   .jsSettings(scalaJSUseMainModuleInitializer := true)
-  .dependsOn(examples)
+  .dependsOn(data)
 
 lazy val testsJVM = tests.jvm
 lazy val testsJS = tests.js

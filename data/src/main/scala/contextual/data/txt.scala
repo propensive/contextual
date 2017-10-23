@@ -12,9 +12,24 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package contextual.examples
+package contextual.data
 
-object TestingApp extends App {
-  Tests.runTests()
+import contextual._
+import scala.util.matching._
+
+object txt {
+
+  object TxtParser extends Interpolator {
+
+    case class ContextType() extends Context
+
+    type Output = String
+
+    def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = Nil
+
+    def evaluate(interpolation: RuntimeInterpolation): String =
+      interpolation.parts.mkString.stripMargin
+  }
+
+  implicit class TxtStringContext(sc: StringContext) { val txt = Prefix(TxtParser, sc) }
 }
-

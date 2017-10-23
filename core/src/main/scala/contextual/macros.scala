@@ -15,15 +15,13 @@
 package contextual
 
 import scala.reflect._, macros.whitebox
-import macrocompat.bundle
 
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
-@bundle
-class Macros(val c: whitebox.Context) {
-  import c.universe.{Literal => AstLiteral, _}
+object Macros {
 
   def contextual[C <: Context, I <: Interpolator { type ContextType = C }: c.WeakTypeTag]
-      (expressions: Tree*): Tree = {
+      (c: whitebox.Context)(expressions: c.Tree*): c.Tree = {
+    import c.universe.{Literal => AstLiteral, _}
 
     /* Get the string literals from the constructed `StringContext`. */
     val astLiterals = c.prefix.tree match {

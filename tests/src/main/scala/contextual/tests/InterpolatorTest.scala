@@ -1,9 +1,9 @@
-package contextual.examples
+package contextual.tests
 
 import scala.util.{Failure, Success, Try}
 
 import contextual.Interpolator
-import contextual.examples.InterpolatorTest.{BadMatch, BadParse, Successful, TestResult}
+import contextual.tests.InterpolatorTest.{BadMatch, BadParse, Successful, TestResult}
 
 trait InterpolatorTest[I <: Interpolator] {
   type Example = (() => I#Output, I#Output)

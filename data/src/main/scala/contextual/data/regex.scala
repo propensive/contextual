@@ -12,40 +12,43 @@
  * either express or implied. See the License for the specific language governing permissions
  * and limitations under the License.
  */
-package contextual.examples
+package contextual.data
 
 import contextual._
-import scala.util.matching._
 
-object email {
+import java.util.regex._
 
-  case class EmailAddress(address: String)
 
-  private val validEmail: Regex =
-    """^[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$""".r
+object regex {
 
-  object EmailParser extends Interpolator {
-
-    type Output = EmailAddress
+  object RegexParser extends Interpolator {
 
     def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
-      
+
       interpolation.parts.foreach {
         case lit@Literal(_, string) =>
-          if(validEmail.findFirstMatchIn(string).isEmpty)
-            interpolation.abort(lit, 0, "this is not a valid email address")
-      
+          try Pattern.compile(interpolation.literals.head) catch {
+            case p: PatternSyntaxException =>
+
+              // We take only the interesting part of the error message
+              val message = p.getMessage.split(" near").head
+              interpolation.error(lit, p.getIndex - 1, message)
+          }
+
         case hole@Hole(_, _) =>
-          interpolation.abort(hole, "substitutions are not supported")
+          interpolation.abort(hole, "substitution is not supported")
       }
 
       Nil
     }
 
-    def evaluate(contextual: RuntimeInterpolation): EmailAddress =
-      EmailAddress(contextual.parts.mkString)
+    def evaluate(interpolation: RuntimeInterpolation): Pattern =
+      Pattern.compile(interpolation.parts.mkString)
 
   }
 
-  implicit class EmailStringContext(sc: StringContext) { val email = Prefix(EmailParser, sc) }
+  implicit class RegexStringContext(sc: StringContext) {
+    val regex = Prefix(RegexParser, sc)
+  }
+
 }
