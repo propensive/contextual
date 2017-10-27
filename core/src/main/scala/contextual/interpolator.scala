@@ -438,3 +438,31 @@ object Interpolator {
     def apply(context: Context): Input
   }
 }
+
+abstract class Verifier[Out] extends Interpolator {
+ 
+  type Output = Out
+  type ContextType = Context
+
+  def check(string: String): Either[(Int, String), Out]
+
+  def noSubsMsg: String = "substitutions are not permitted"
+
+  def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = {
+    interpolation.parts.foreach {
+      case lit@Literal(_, string) =>
+        check(string) match {
+          case Left((pos, error)) =>
+            interpolation.abort(lit, pos, error)
+          case Right(_) => ()
+        }
+      case hole@Hole(_, _) =>
+        interpolation.abort(hole, noSubsMsg)
+    }
+    Nil
+  }
+
+  def evaluate(contextual: RuntimeInterpolation): Out =
+    check(contextual.parts.mkString).right.get
+
+}
