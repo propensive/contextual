@@ -47,11 +47,11 @@ lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.3",
+  scalaVersion := "2.12.4",
   name := "contextual",
-  version := "1.0.1",
+  version := "1.1.0",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible", "-Ywarn-adapted-args"),
-  crossScalaVersions := Seq("2.10.6", "2.11.11", "2.12.3"),
+  crossScalaVersions := Seq("2.11.11", "2.12.4"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git"))
 )

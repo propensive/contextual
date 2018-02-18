@@ -1,5 +1,10 @@
 # Change log
 
+## Version 1.1.0
+
+- Support for simple verifiers where the same method implements both the
+  compile-time check and the runtime implementation.
+
 ## Version 1.0.2
 
 - Allow refinement of the interpolator return type, to help IDEs which are
