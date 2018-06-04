@@ -30,3 +30,13 @@ object bigDecimal {
 
   implicit class BigDecimalStringContext(sc: StringContext) { val d = Prefix(BigDecimalParser, sc) }
 }
+
+object bigInt {
+  object BigIntParser extends Verifier[BigInt] {
+    def check(string: String): Either[(Int, String), BigInt] =
+      try Right(BigInt(string))
+      catch { case e: NumberFormatException => Left((0, "could not parse integer")) }
+  }
+
+  implicit class BigIntStringContext(sc: StringContext) { val i = Prefix(BigIntParser, sc) }
+}
