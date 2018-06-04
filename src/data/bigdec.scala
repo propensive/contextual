@@ -20,7 +20,6 @@
 package contextual.data
 
 import contextual._
-import scala.util.matching._
 
 object bigDecimal {
   object BigDecimalParser extends Verifier[BigDecimal] {
