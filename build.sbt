@@ -57,7 +57,7 @@ lazy val buildSettings = Seq(
 )
 
 lazy val publishSettings = Seq(
-  homepage := Some(url("http://co.ntextu.al/")),
+  homepage := Some(url("https://propensive.com/opensource/contextual")),
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
   autoAPIMappings := true,
   publishMavenStyle := true,
