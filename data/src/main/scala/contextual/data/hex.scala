@@ -15,6 +15,7 @@
 package contextual.data
 
 import contextual._
+import scala.collection.compat._
 
 object hex {
 
@@ -50,7 +51,7 @@ object hex {
           if(hexString.length%2 != 0) interpolation.abort(lit, 0,
               "hexadecimal size is not an exact number of bytes")
 
-          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
+          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).to(List).zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
