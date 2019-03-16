@@ -48,7 +48,6 @@ lazy val testsNative = tests.native
 lazy val buildSettings = Seq(
   organization := "com.propensive",
   scalaVersion := "2.12.4",
-  //scalaVersion := "2.13.0-M5",
   name := "contextual",
   version := "1.1.0",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-numeric-widen"),
