@@ -47,7 +47,7 @@ lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.8",
   name := "contextual",
   version := "1.1.0",
   scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-numeric-widen"),
@@ -58,7 +58,7 @@ lazy val buildSettings = Seq(
       case _ => Seq()
     }
   },
-  crossScalaVersions := Seq("2.11.11", "2.12.4", "2.13.0-M5"),
+  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git")),
   libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "0.3.0",
@@ -118,8 +118,8 @@ def crossVersionSharedSources()  = Seq(
 
 lazy val nativeSettings: Seq[Setting[_]] = Seq(
   // Scala Native not yet available for 2.12.x, so override the versions
-  scalaVersion := "2.11.11",
-  crossScalaVersions := Seq("2.11.11")
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12")
 )
 
 lazy val quasiQuotesDependencies: Seq[Setting[_]] =
