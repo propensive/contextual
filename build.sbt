@@ -47,13 +47,21 @@ lazy val testsNative = tests.native
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.4",
+  scalaVersion := "2.12.8",
   name := "contextual",
   version := "1.1.0",
-  scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-nullary-unit", "-Ywarn-numeric-widen", "-Ywarn-inaccessible", "-Ywarn-adapted-args"),
-  crossScalaVersions := Seq("2.11.11", "2.12.4"),
+  scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-numeric-widen"),
+  scalacOptions ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, scalaMajor)) if scalaMajor <= 12 =>
+        Seq("-Ywarn-nullary-unit", "-Ywarn-inaccessible", "-Ywarn-adapted-args")
+      case _ => Seq()
+    }
+  },
+  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
-    "scm:git:git@github.com:propensive/contextual.git"))
+    "scm:git:git@github.com:propensive/contextual.git")),
+  libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "0.3.0",
 )
 
 lazy val publishSettings = Seq(
@@ -97,8 +105,7 @@ lazy val publishSettings = Seq(
 )
 
 lazy val noPublishSettings = Seq(
-  publish := (),
-  publishLocal := (),
+  skip in publish := true,
   publishArtifact := false
 )
 
@@ -111,8 +118,8 @@ def crossVersionSharedSources()  = Seq(
 
 lazy val nativeSettings: Seq[Setting[_]] = Seq(
   // Scala Native not yet available for 2.12.x, so override the versions
-  scalaVersion := "2.11.11",
-  crossScalaVersions := Seq("2.10.6", "2.11.11")
+  scalaVersion := "2.11.12",
+  crossScalaVersions := Seq("2.11.12")
 )
 
 lazy val quasiQuotesDependencies: Seq[Setting[_]] =
@@ -130,7 +137,14 @@ lazy val scalaMacroDependencies: Seq[Setting[_]] = Seq(
   libraryDependencies += "org.typelevel" %% "macro-compat" % "1.1.1",
   libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
   libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-  libraryDependencies += compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+  libraryDependencies ++= {
+    CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((2, scalaMajor)) if scalaMajor <= 12 => Seq(
+        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
+      )
+      case _ => Seq()
+    }
+  }
 )
 
 credentials ++= (for {

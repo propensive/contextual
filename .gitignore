@@ -17,4 +17,5 @@ TAGS
 .settings
 .classpath
 .project
-
+.metals/
+.bloop/

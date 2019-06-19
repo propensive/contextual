@@ -14,7 +14,8 @@
  */
 package contextual
 
-import scala.reflect._, macros._
+import scala.collection.compat._
+import scala.reflect._, macros.{Context => _, _}
 
 import language.implicitConversions
 
@@ -204,9 +205,9 @@ trait Interpolator { interpolator =>
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         val cls = ctx.getClass
-        val init :+ last = cls.getName.dropRight(1).split("\\.").to[Vector]
+        val init :+ last = cls.getName.dropRight(1).split("\\.").to(Vector)
 
-        val elements = init ++ last.split("\\$").to[Vector]
+        val elements = init ++ last.split("\\$").to(Vector)
         
         val selector = elements.foldLeft(q"_root_": Tree) { case (t, p) =>
           Select(t, TermName(p))
@@ -244,7 +245,7 @@ trait Interpolator { interpolator =>
     def apply[ContextPair <: (Context, Context)]
         (cases: Case[ContextPair, Value, Input]*):
         Embedder[ContextPair, Value, Input, interpolator.type] =
-      new Embedder(cases)
+      new Embedder(cases.toSeq)
   }
 
   /** Intermediate factory method for making new [[Embedder]] typeclasses, via the

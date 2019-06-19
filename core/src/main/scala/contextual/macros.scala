@@ -14,6 +14,7 @@
  */
 package contextual
 
+import scala.collection.compat._
 import scala.reflect._, macros.whitebox
 
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
@@ -68,7 +69,7 @@ object Macros {
       case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
-          case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
+          case RefinedType(intersectionTypes, _) => intersectionTypes.to(Set)
           case typ: Type => Set(typ)
         }
 
