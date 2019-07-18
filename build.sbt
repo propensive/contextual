@@ -1,153 +1,118 @@
-import com.typesafe.sbt.pgp.PgpKeys.publishSigned
-import ReleaseTransformations._
+// shadow sbt-scalajs' crossProject and CrossType until Scala.js 1.0.0 is released
+import sbtcrossproject.crossProject
+import com.softwaremill.PublishTravis.publishTravisSettings
 
-import sbtcrossproject.{crossProject, CrossType}
+val v2_12 = "2.12.8"
+val v2_13 = "2.13.0"
 
-lazy val core = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val core = crossProject(JVMPlatform, JSPlatform)
   .in(file("core"))
-  .settings(buildSettings: _*)
-  .settings(publishSettings: _*)
-  .settings(scalaMacroDependencies: _*)
+  .settings(buildSettings)
+  .settings(publishSettings)
+  .settings(scalaMacroDependencies)
   .settings(moduleName := "contextual")
-  .nativeSettings(nativeSettings)
 
 lazy val coreJVM = core.jvm
 lazy val coreJS = core.js
-lazy val coreNative = core.native
 
-lazy val data = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val data = crossProject(JVMPlatform, JSPlatform)
   .in(file("data"))
-  .settings(buildSettings: _*)
-  .settings(publishSettings: _*)
+  .settings(buildSettings)
+  .settings(noPublishSettings)
   .settings(moduleName := "contextual-data")
-  .settings(quasiQuotesDependencies)
-  .nativeSettings(nativeSettings)
   .dependsOn(core)
 
 lazy val dataJVM = data.jvm
 lazy val dataJS = data.js
-lazy val dataNative = data.native
 
-lazy val tests = crossProject(JSPlatform, JVMPlatform, NativePlatform)
-  .crossType(CrossType.Pure)
+lazy val tests = project
   .in(file("tests"))
-  .settings(buildSettings: _*)
-  .settings(noPublishSettings: _*)
+  .settings(buildSettings)
+  .settings(noPublishSettings)
+  .settings(unmanagedSettings)
   .settings(moduleName := "contextual-tests")
-  .settings(quasiQuotesDependencies)
-  .nativeSettings(nativeSettings)
-  .jsSettings(scalaJSUseMainModuleInitializer := true)
-  .dependsOn(data)
+  .settings(
+    initialCommands in console := """import contextual.tests._; import contextual.data._;""",
+    libraryDependencies ++= Seq(
+      // These two to allow compilation under Java 9...
+      // Specifically to import XML stuff that got modularised
+      "javax.xml.bind" % "jaxb-api" % "2.3.0" % "compile",
+      "com.sun.xml.bind" % "jaxb-impl" % "2.3.0" % "compile"
+    )
+  )
+  // compiling and running the tests only for 2.12
+  .settings(skip := scalaVersion.value != v2_12)
+  .settings(test := Def.taskDyn { if (scalaVersion.value == v2_12) (run in Compile).toTask("") else Def.task {} }.value)
+  .dependsOn(dataJVM)
 
-lazy val testsJVM = tests.jvm
-lazy val testsJS = tests.js
-lazy val testsNative = tests.native
+lazy val root = (project in file("."))
+  .aggregate(coreJVM, coreJS, dataJVM, dataJS, tests)
+  .settings(buildSettings)
+  .settings(publishSettings)
+  .settings(publishTravisSettings)
+  .settings(noPublishSettings)
 
 lazy val buildSettings = Seq(
   organization := "com.propensive",
-  scalaVersion := "2.12.8",
   name := "contextual",
-  version := "1.1.0",
-  scalacOptions ++= Seq("-deprecation", "-feature", "-Ywarn-value-discard", "-Ywarn-dead-code", "-Ywarn-numeric-widen"),
+  scalacOptions ++= Seq(
+    "-deprecation",
+    "-feature",
+    "-Ywarn-value-discard",
+    "-Ywarn-dead-code",
+    "-Ywarn-numeric-widen",
+  ),
   scalacOptions ++= {
     CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, scalaMajor)) if scalaMajor <= 12 =>
-        Seq("-Ywarn-nullary-unit", "-Ywarn-inaccessible", "-Ywarn-adapted-args")
-      case _ => Seq()
+      case Some((2, v)) if v <= 12 =>
+        Seq(
+          "-Xexperimental",
+          "-Xfuture",
+          "-Ywarn-nullary-unit",
+          "-Ywarn-inaccessible",
+          "-Ywarn-adapted-args"
+        )
+      case _ =>
+        Nil
     }
   },
-  crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
-  scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
-    "scm:git:git@github.com:propensive/contextual.git")),
-  libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "0.3.0",
+  scmInfo := Some(
+    ScmInfo(url("https://github.com/propensive/contextual"),
+      "scm:git:git@github.com:propensive/contextual.git")
+  ),
+  crossScalaVersions := v2_12 :: v2_13 :: Nil,
+  scalaVersion := crossScalaVersions.value.head
 )
 
-lazy val publishSettings = Seq(
-  homepage := Some(url("http://co.ntextu.al/")),
+lazy val publishSettings = ossPublishSettings ++ Seq(
+  homepage := Some(url("http://propensive.com/")),
+  organizationHomepage := Some(url("http://propensive.com/")),
   licenses := Seq("Apache-2.0" -> url("http://www.apache.org/licenses/LICENSE-2.0.txt")),
-  autoAPIMappings := true,
-  publishMavenStyle := true,
-  publishArtifact in Test := false,
-  pomIncludeRepository := { _ => false },
-  publishTo := {
-    val nexus = "https://oss.sonatype.org/"
-    if(isSnapshot.value)
-      Some("snapshots" at nexus + "content/repositories/snapshots")
-    else
-      Some("releases" at nexus + "service/local/staging/deploy/maven2")
-  },
-  pomExtra := (
-    <developers>
-      <developer>
-        <id>propensive</id>
-        <name>Jon Pretty</name>
-        <url>https://github.com/propensive/contextual/</url>
-      </developer>
-    </developers>
+  developers := List(
+    Developer(
+      id = "propensive",
+      name = "Jon Pretty",
+      email = "",
+      url = new URL("https://github.com/propensive/contextual/")
+    )
   ),
-  releaseProcess := Seq[ReleaseStep](
-    checkSnapshotDependencies,
-    inquireVersions,
-    runTest,
-    setReleaseVersion,
-    commitReleaseVersion,
-    tagRelease,
-    publishArtifacts,
-    setNextVersion,
-    commitNextVersion,
-    ReleaseStep(action = Command.process("sonatypeReleaseAll", _)),
-    pushChanges
+  scmInfo := Some(
+    ScmInfo(
+      url("https://github.com/propensive/" + name.value),
+      "scm:git:git@github.com/propensive/" + name.value + ".git"
+    )
   ),
-  releaseCrossBuild := true,
-  releasePublishArtifactsAction := PgpKeys.publishSigned.value
+  sonatypeProfileName := "com.propensive",
 )
 
-lazy val noPublishSettings = Seq(
-  skip in publish := true,
-  publishArtifact := false
-)
-
-import java.io.File
-
-def crossVersionSharedSources()  = Seq(
- (unmanagedSourceDirectories in Compile) ++= { (unmanagedSourceDirectories in Compile ).value.map {
-     dir:File => new File(dir.getPath + "_" + scalaBinaryVersion.value)}}
-)
-
-lazy val nativeSettings: Seq[Setting[_]] = Seq(
-  // Scala Native not yet available for 2.12.x, so override the versions
-  scalaVersion := "2.11.12",
-  crossScalaVersions := Seq("2.11.12")
-)
-
-lazy val quasiQuotesDependencies: Seq[Setting[_]] =
-  libraryDependencies ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, scalaMajor)) if scalaMajor >= 11 => Seq()
-      case Some((2, 10)) => Seq(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full),
-        "org.scalamacros" %% "quasiquotes" % "2.1.0" cross CrossVersion.binary
-      )
-    }
-  }
+lazy val unmanagedSettings = unmanagedBase :=
+  baseDirectory.value / "lib" /
+    (CrossVersion.partialVersion(scalaVersion.value) match {
+      case Some((major, minor)) => s"$major.$minor"
+      case _ => ""
+    })
 
 lazy val scalaMacroDependencies: Seq[Setting[_]] = Seq(
-  libraryDependencies += "org.typelevel" %% "macro-compat" % "1.1.1",
-  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value,
-  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value,
-  libraryDependencies ++= {
-    CrossVersion.partialVersion(scalaVersion.value) match {
-      case Some((2, scalaMajor)) if scalaMajor <= 12 => Seq(
-        compilerPlugin("org.scalamacros" % "paradise" % "2.1.0" cross CrossVersion.full)
-      )
-      case _ => Seq()
-    }
-  }
+  libraryDependencies += "org.scala-lang" % "scala-reflect" % scalaVersion.value % "provided",
+  libraryDependencies += "org.scala-lang" % "scala-compiler" % scalaVersion.value % "provided"
 )
-
-credentials ++= (for {
-  username <- Option(System.getenv().get("SONATYPE_USERNAME"))
-  password <- Option(System.getenv().get("SONATYPE_PASSWORD"))
-} yield Credentials("Sonatype Nexus Repository Manager", "oss.sonatype.org", username, password)).toSeq
