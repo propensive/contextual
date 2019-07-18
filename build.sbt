@@ -61,7 +61,7 @@ lazy val buildSettings = Seq(
   crossScalaVersions := Seq("2.11.12", "2.12.8", "2.13.0"),
   scmInfo := Some(ScmInfo(url("https://github.com/propensive/contextual"),
     "scm:git:git@github.com:propensive/contextual.git")),
-  libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "0.3.0",
+  libraryDependencies += "org.scala-lang.modules" %% "scala-collection-compat" % "2.1.1",
 )
 
 lazy val publishSettings = Seq(
