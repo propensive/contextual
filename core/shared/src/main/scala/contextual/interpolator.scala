@@ -14,7 +14,6 @@
  */
 package contextual
 
-import scala.collection.compat._
 import scala.reflect._, macros.{Context => _, _}
 
 import language.implicitConversions
@@ -205,9 +204,9 @@ trait Interpolator { interpolator =>
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         val cls = ctx.getClass
-        val init :+ last = cls.getName.dropRight(1).split("\\.").to(Vector)
+        val init :+ last = cls.getName.dropRight(1).split("\\.").toList
 
-        val elements = init ++ last.split("\\$").to(Vector)
+        val elements = init ++ last.split("\\$").toList
         
         val selector = elements.foldLeft(q"_root_": Tree) { case (t, p) =>
           Select(t, TermName(p))
