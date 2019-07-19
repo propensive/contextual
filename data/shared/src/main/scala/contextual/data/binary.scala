@@ -15,15 +15,14 @@
 package contextual.data
 
 import contextual._
-import scala.collection.compat._
 
-object hex {
+object binary {
 
-  object HexParser extends Interpolator {
+  object BinParser extends Interpolator {
 
     type Output = Array[Byte]
 
-    def contextualize(interpolation: StaticInterpolation): Seq[ContextType] = Nil
+    def contextualize(interpolation: StaticInterpolation) = Nil
 
     override def evaluator(contexts: Seq[ContextType], interpolation: StaticInterpolation):
         interpolation.universe.Tree = {
@@ -31,37 +30,32 @@ object hex {
 
       val bytes = interpolation.parts.flatMap {
         case lit@Literal(index, string) =>
-          val hexString =
-            if(string.startsWith("0x")) string.drop(2)
-            else if (string.startsWith("#")) string.drop(1)
-            else string
-          
-          val invalidDigits = hexString.zipWithIndex.filterNot { case (ch, _) =>
-            val lowerCh = ch.toLower
-            !(lowerCh < 48 || (lowerCh > 57 && ch < 97) || lowerCh > 102)
+
+          // Fail on any uses of non-binary characters
+          string.zipWithIndex.map { case (ch, idx) =>
+            if(ch != '0' && ch != '1')
+              interpolation.error(lit, idx, "only '0' and '1' are valid")
           }
 
-          invalidDigits.foreach { case (ch, idx) =>
-            interpolation.error(lit, idx, "bad hexadecimal digit")
-          }
+          // Fail if it's the wrong length
+          if(string.length%8 != 0) interpolation.abort(lit, 0,
+              "binary size is not an exact number of bytes")
 
-          if(invalidDigits.nonEmpty) interpolation.abort(lit, 0,
-            "hexadecimal string has invalid digits")
-
-          if(hexString.length%2 != 0) interpolation.abort(lit, 0,
-              "hexadecimal size is not an exact number of bytes")
-
-          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).to(List).zipWithIndex.map {
+          // Convert the string to a sequence of assignment operations
+          string.grouped(8).map(Integer.parseInt(_, 2).toByte).toList.zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
         case hole@Hole(_, _) =>
-          interpolation.abort(hole, "substitutions are not supported")
+
+          // We don't support substitutions (yet)
+          interpolation.abort(hole, "can't make substitutions")
 
       }
 
       val size = bytes.size
 
+      // The code that will be evaluated at runtime
       q"""{
         val array = new Array[Byte]($size)
         ..$bytes
@@ -71,5 +65,5 @@ object hex {
     }
   }
 
-  implicit class HexStringContext(sc: StringContext) { val hex = Prefix(HexParser, sc) }
+  implicit class BinaryStringContext(sc: StringContext) { val bin = Prefix(BinParser, sc) }
 }
