@@ -26,28 +26,8 @@ lazy val data = crossProject(JVMPlatform, JSPlatform)
 lazy val dataJVM = data.jvm
 lazy val dataJS = data.js
 
-lazy val tests = project
-  .in(file("tests"))
-  .settings(buildSettings)
-  .settings(noPublishSettings)
-  .settings(unmanagedSettings)
-  .settings(moduleName := "contextual-tests")
-  .settings(
-    initialCommands in console := """import contextual.tests._; import contextual.data._;""",
-    libraryDependencies ++= Seq(
-      // These two to allow compilation under Java 9...
-      // Specifically to import XML stuff that got modularised
-      "javax.xml.bind" % "jaxb-api" % "2.3.0" % "compile",
-      "com.sun.xml.bind" % "jaxb-impl" % "2.3.0" % "compile"
-    )
-  )
-  // compiling and running the tests only for 2.12
-  .settings(skip := scalaVersion.value != v2_12)
-  .settings(test := Def.taskDyn { if (scalaVersion.value == v2_12) (run in Compile).toTask("") else Def.task {} }.value)
-  .dependsOn(dataJVM)
-
 lazy val root = (project in file("."))
-  .aggregate(coreJVM, coreJS, dataJVM, dataJS, tests)
+  .aggregate(coreJVM, coreJS, dataJVM, dataJS)
   .settings(buildSettings)
   .settings(publishSettings)
   .settings(publishTravisSettings)
