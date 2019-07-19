@@ -19,6 +19,7 @@ lazy val data = crossProject(JVMPlatform, JSPlatform)
   .in(file("data"))
   .settings(buildSettings)
   .settings(noPublishSettings)
+  .settings(scalaMacroDependencies)
   .settings(moduleName := "contextual-data")
   .dependsOn(core)
 
