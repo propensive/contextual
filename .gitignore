@@ -17,4 +17,5 @@ TAGS
 .settings
 .classpath
 .project
-
+bin
+lib
