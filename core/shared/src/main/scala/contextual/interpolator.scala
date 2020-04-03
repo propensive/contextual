@@ -220,8 +220,8 @@ trait Interpolator { interpolator =>
 
     q"""${interpolation.interpolatorTerm}.evaluate(
       new ${interpolation.interpolatorTerm}.RuntimeInterpolation(
-        _root_.scala.collection.Seq(..${interpolation.literals}),
-        _root_.scala.collection.Seq(..$substitutions)
+        _root_.scala.collection.immutable.Seq(..${interpolation.literals}),
+        _root_.scala.collection.immutable.Seq(..$substitutions)
       )
     )"""
   }
