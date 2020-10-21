@@ -2,7 +2,7 @@
 import sbtcrossproject.crossProject
 import com.softwaremill.PublishTravis.publishTravisSettings
 
-val v2_12 = "2.12.8"
+val v2_12 = "2.12.12"
 val v2_13 = "2.13.3"
 
 lazy val core = crossProject(JVMPlatform, JSPlatform)
