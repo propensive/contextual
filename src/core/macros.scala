@@ -70,7 +70,7 @@ object Macros {
       case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
-          case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
+          case RefinedType(intersectionTypes, _) => intersectionTypes.toSet
           case typ: Type => Set(typ)
         }
 

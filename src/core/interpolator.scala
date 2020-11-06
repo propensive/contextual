@@ -206,9 +206,9 @@ trait Interpolator { interpolator =>
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         val cls = ctx.getClass
-        val init :+ last = cls.getName.dropRight(1).split("\\.").to[Vector]
+        val init :+ last = cls.getName.dropRight(1).split("\\.").toVector
 
-        val elements = init ++ last.split("\\$").to[Vector]
+        val elements = init ++ last.split("\\$").toVector
         
         val selector = elements.foldLeft(q"_root_": Tree) { case (t, p) =>
           Select(t, TermName(p))
