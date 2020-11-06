@@ -14,12 +14,13 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
 import javax.xml.xpath._
 import scala.util._
 
+import language.experimental.macros
 object xpath {
   object XpathParser extends Interpolator {
     case class ContextType() extends Context
@@ -47,5 +48,8 @@ object xpath {
     }
   }
 
-  implicit class XpathStringContext(sc: StringContext) { val xpath = Prefix(XpathParser, sc) }
+  implicit class XpathStringContext(sc: StringContext) {
+    def xpath(expressions: String*): XPathExpression =
+      macro Macros.contextual[XpathParser.type]
+  }
 }

@@ -16,7 +16,7 @@
 */
 package contextual
 
-import scala.reflect._, macros._
+import scala.reflect._, macros.{Context => _, _}
 
 import language.implicitConversions
 
@@ -103,7 +103,7 @@ trait Interpolator { interpolator =>
         case Literal(index, _) => literalTrees(index)
       }
       
-      errorTree.pos.withPoint(errorTree.pos.start + offset)
+      errorTree.pos//.withPoint(errorTree.pos.start + offset)
     }
 
     /** Report a compile error `message`, at the index `offset` within the [[Literal]] `part`,
@@ -206,9 +206,9 @@ trait Interpolator { interpolator =>
       case ((ctx, Apply(Apply(_, List(value)), List(embedder))), idx) =>
 
         val cls = ctx.getClass
-        val init :+ last = cls.getName.dropRight(1).split("\\.").to[Vector]
+        val init :+ last = cls.getName.dropRight(1).split("\\.").toList
 
-        val elements = init ++ last.split("\\$").to[Vector]
+        val elements = init ++ last.split("\\$").toList
         
         val selector = elements.foldLeft(q"_root_": Tree) { case (t, p) =>
           Select(t, TermName(p))
@@ -220,10 +220,12 @@ trait Interpolator { interpolator =>
         )"""
     }
 
+    println("Literals: '"+interpolation.literals+"'")
+
     q"""${interpolation.interpolatorTerm}.evaluate(
       new ${interpolation.interpolatorTerm}.RuntimeInterpolation(
-        _root_.scala.collection.Seq(..${interpolation.literals}),
-        _root_.scala.collection.Seq(..$substitutions)
+        _root_.scala.collection.immutable.Seq(..${interpolation.literals}),
+        _root_.scala.collection.immutable.Seq(..$substitutions)
       )
     )"""
   }
@@ -246,7 +248,7 @@ trait Interpolator { interpolator =>
     def apply[ContextPair <: (Context, Context)]
         (cases: Case[ContextPair, Value, Input]*):
         Embedder[ContextPair, Value, Input, interpolator.type] =
-      new Embedder(cases)
+      new Embedder(cases.toSeq)
   }
 
   /** Intermediate factory method for making new [[Embedder]] typeclasses, via the
@@ -465,6 +467,6 @@ abstract class Verifier[Out] extends Interpolator {
   }
 
   def evaluate(contextual: RuntimeInterpolation): Out =
-    check(contextual.parts.mkString).right.get
+    check(contextual.parts.mkString).toOption.get
 
 }

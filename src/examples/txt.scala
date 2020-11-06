@@ -14,10 +14,12 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
 import scala.util.matching._
+
+import language.experimental.macros
 
 object txt {
 
@@ -33,5 +35,8 @@ object txt {
       interpolation.parts.mkString.stripMargin
   }
 
-  implicit class TxtStringContext(sc: StringContext) { val txt = Prefix(TxtParser, sc) }
+  implicit class TxtStringContext(sc: StringContext) {
+    def txt(expressions: String*): String =
+      macro Macros.contextual[TxtParser.type]
+  }
 }

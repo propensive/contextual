@@ -21,7 +21,7 @@ import scala.reflect._, macros.whitebox
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
 object Macros {
 
-  def contextual[C <: Context, I <: Interpolator { type ContextType = C }: c.WeakTypeTag]
+  def contextual[I <: Interpolator: c.WeakTypeTag]
       (c: whitebox.Context)(expressions: c.Tree*): c.Tree = {
     import c.universe.{Literal => AstLiteral, _}
 
@@ -29,6 +29,7 @@ object Macros {
     val astLiterals = c.prefix.tree match {
       case Select(Apply(_, List(Apply(_, lits))), _)           => lits
       case Select(Apply(Apply(_, List(Apply(_, lits))), _), _) => lits
+      case Apply(_, List(Apply(_, lits))) => lits
     }
 
     val stringLiterals: Seq[String] = astLiterals.map {
@@ -70,12 +71,13 @@ object Macros {
       case (Apply(Apply(TypeApply(_, List(contextType, _, _, _)), _), _), idx) =>
         val types: Set[Type] = contextType.tpe match {
           case SingleType(_, singletonType) => Set(singletonType.typeSignature)
-          case RefinedType(intersectionTypes, _) => intersectionTypes.to[Set]
+          case RefinedType(intersectionTypes, _) => intersectionTypes.toSet
           case typ: Type => Set(typ)
         }
 
         val contextObjects = types.map { t =>
-          (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
+          (getModule[interpolator.ContextType](t.typeArgs(0)),
+              getModule[interpolator.ContextType](t.typeArgs(1)))
         }.toMap
 
         interpolator.Hole(idx, contextObjects)

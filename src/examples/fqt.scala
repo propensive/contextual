@@ -14,9 +14,11 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
+
+import language.experimental.macros
 
 object fqt {
 
@@ -43,7 +45,7 @@ object fqt {
           }
           try {
             val returnType = interpolation.macroContext.typecheck(parsed).tpe.toString
-            q"_root_.contextual.data.fqt.Fqt($string)"
+            q"_root_.contextual.examples.fqt.Fqt($string)"
           } catch {
             case e: TypecheckException =>
               interpolation.abort(lit, e.pos.start, s"$string is not a valid type")
@@ -54,5 +56,8 @@ object fqt {
     }
   }
 
-  implicit class FqtStringContext(sc: StringContext) { val fqt = Prefix(FqtParser, sc) }
+  implicit class FqtStringContext(sc: StringContext) {
+    def fqt(expressions: String*): Fqt =
+      macro Macros.contextual[FqtParser.type]
+  }
 }

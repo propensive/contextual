@@ -14,9 +14,11 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
+
+import language.experimental.macros
 
 object bigDecimal {
   object BigDecimalParser extends Verifier[BigDecimal] {
@@ -25,7 +27,10 @@ object bigDecimal {
       catch { case e: NumberFormatException => Left((0, "could not parse decimal")) }
   }
 
-  implicit class BigDecimalStringContext(sc: StringContext) { val d = Prefix(BigDecimalParser, sc) }
+  implicit class BigDecimalStringContext(sc: StringContext) {
+    def d(expressions: String*): BigDecimal =
+      macro Macros.contextual[BigDecimalParser.type]
+  }
 }
 
 object bigInt {
@@ -35,5 +40,8 @@ object bigInt {
       catch { case e: NumberFormatException => Left((0, "could not parse integer")) }
   }
 
-  implicit class BigIntStringContext(sc: StringContext) { val i = Prefix(BigIntParser, sc) }
+  implicit class BigIntStringContext(sc: StringContext) {
+    def i(expressions: String*): BigInt =
+      macro Macros.contextual[BigIntParser.type]
+  }
 }

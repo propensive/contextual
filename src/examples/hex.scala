@@ -14,9 +14,11 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
+
+import language.experimental.macros
 
 object hex {
 
@@ -52,7 +54,7 @@ object hex {
           if(hexString.length%2 != 0) interpolation.abort(lit, 0,
               "hexadecimal size is not an exact number of bytes")
 
-          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).to[List].zipWithIndex.map {
+          hexString.grouped(2).map(Integer.parseInt(_, 16).toByte).toList.zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
@@ -72,5 +74,8 @@ object hex {
     }
   }
 
-  implicit class HexStringContext(sc: StringContext) { val hex = Prefix(HexParser, sc) }
+  implicit class HexStringContext(sc: StringContext) {
+    def hex(expressions: String*): Array[Byte] =
+      macro Macros.contextual[HexParser.type]
+  }
 }

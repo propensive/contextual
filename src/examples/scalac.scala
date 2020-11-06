@@ -14,10 +14,12 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
 import fqt._
+
+import language.experimental.macros
 
 object scalac {
 
@@ -47,11 +49,11 @@ object scalac {
           }
           try {
             val returnType = interpolation.macroContext.typecheck(parsed).tpe.toString
-            q"""_root_.contextual.data.scalac.Returns(
-                _root_.contextual.data.fqt.Fqt($returnType)): Compilation"""
+            q"""_root_.contextual.examples.scalac.Returns(
+                _root_.contextual.examples.fqt.Fqt($returnType)): Compilation"""
           } catch {
             case e: TypecheckException =>
-              q"""_root_.contextual.data.scalac.TypecheckError(${e.msg}): Compilation"""
+              q"""_root_.contextual.examples.scalac.TypecheckError(${e.msg}): Compilation"""
           }
         case hole: Hole =>
           interpolation.abort(hole, "compilation does not support substitutions")
@@ -59,5 +61,9 @@ object scalac {
     }
   }
 
-  implicit class ScalacStringContext(sc: StringContext) { val scalac = Prefix(ScalacParser, sc) }
+  implicit class ScalacStringContext(sc: StringContext) {
+    def scalac(expressions: String*): Compilation =
+      macro Macros.contextual[ScalacParser.type]
+  }
+
 }

@@ -14,9 +14,11 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
+
+import language.experimental.macros
 
 object shell {
 
@@ -98,7 +100,8 @@ object shell {
   )
   
   implicit class ShellStringContext(sc: StringContext) {
-    val sh = Prefix(ShellInterpolator, sc)
+    def sh(expressions: String*): Process =
+      macro Macros.contextual[ShellInterpolator.type]
   }
 
 }
