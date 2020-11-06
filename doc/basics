@@ -4,6 +4,8 @@ We can define a simple interpolator for URLs like this:
 ```
 import contextual._
 
+import language.experimental.macros
+
 case class Url(url: String)
 
 object UrlInterpolator extends Interpolator {
@@ -23,7 +25,7 @@ object UrlInterpolator extends Interpolator {
 }
 
 implicit class UrlStringContext(sc: StringContext) {
-  val url = Prefix(UrlInterpolator, sc)
+  def url(expressions: String*) = macro Macros.contextual[UrlInterpolator.type]
 ```
 
 and at the use site, it makes this possible:
@@ -164,16 +166,22 @@ substitution.
 ### Attaching the interpolator to a prefix
 
 Finally, in order to make a new string interpolator available through a prefix
-on a string, the Scala compiler needs to be able to "see" that prefix on
-Scala's built-in `StringContext` object. This is very easily done by specifying
-a new `Prefix` value with the desired name on an implicit class that wraps
-`StringContext`, as in the example above,
-```
+on a string, the Scala compiler needs to add an extension method to the
+`StringContext` type whose name is the same as the prefix to the interpolated
+string.
+
+That definition must take the following form,
+```scala
 implicit class UrlStringContext(sc: StringContext) {
-  val url = Prefix(UrlInterpolator, sc)
+  def url(expressions: String*): Url =
+    macro Macros.contextual[UrlInterpreter.type]
 }
 ```
+for the interpolations to be "seen".
 
-The `Prefix` constructor takes only two parameters: the `Interpolator` object
-(and it must be an *object*, otherwise the macro will not be able to invoke it
-at compile time), and the `StringContext` instance that we are extending.
+While the name of the implicit class, `StringContext` parameter and (of course)
+method name can vary, the parameter name, `expressions`, cannot, and it must be
+a repeated argument.
+
+The `macro` invocation of `Macros.contextual` takes a single type parameter, which
+is the singleton type of the interpolation object.
