@@ -3,7 +3,7 @@
 [<img src="https://img.shields.io/discord/633198088311537684?color=8899f7&label=DISCORD&style=for-the-badge" height="24">](https://discord.gg/CHCPjERybv)
 [<img src="https://img.shields.io/matrix/propensive.contextual:matrix.org?label=MATRIX&color=0dbd8b&style=for-the-badge" height="24">](https://app.element.io/#/room/#propensive.contextual:matrix.org)
 [<img src="https://img.shields.io/twitter/follow/propensive?color=%2300acee&label=TWITTER&style=for-the-badge" height="24">](https://twitter.com/propensive)
-[<img src="https://img.shields.io/maven-central/v/com.propensive/contextual_2.12?color=2465cd&style=for-the-badge" height="24">](https://search.maven.org/artifact/com.propensive/contextual_2.12)
+[<img src="https://img.shields.io/maven-central/v/com.propensive/contextual-core_2.12?color=2465cd&style=for-the-badge" height="24">](https://search.maven.org/artifact/com.propensive/contextual-core_2.12)
 [<img src="https://img.shields.io/badge/vent-propensive%2Fcontextual-f05662?style=for-the-badge" height="24">](https://vent.dev)
 
 <img src="/doc/images/github.png" valign="middle">
@@ -227,10 +227,10 @@ or imported into an existing layer with,
 ```
 fury layer import -i propensive/contextual
 ```
-A binary is available on Maven Central as `com.propensive:contextual_<scala-version>:1.3.0`. This may be added
+A binary is available on Maven Central as `com.propensive:contextual-core_<scala-version>:1.5.0`. This may be added
 to an [sbt](https://www.scala-sbt.org/) build with:
 ```
-libraryDependencies += "com.propensive" %% "contextual" % "1.3.0"
+libraryDependencies += "com.propensive" %% "contextual-core" % "1.5.0"
 ```
 
 ## Contributing
