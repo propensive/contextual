@@ -14,12 +14,13 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
 
 import java.util.regex._
 
+import language.experimental.macros
 
 object regex {
 
@@ -50,7 +51,8 @@ object regex {
   }
 
   implicit class RegexStringContext(sc: StringContext) {
-    val regex = Prefix(RegexParser, sc)
+    def regex(expressions: String*): Pattern =
+      macro Macros.contextual[RegexParser.ContextType, RegexParser.type]
   }
 
 }

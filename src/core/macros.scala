@@ -29,6 +29,7 @@ object Macros {
     val astLiterals = c.prefix.tree match {
       case Select(Apply(_, List(Apply(_, lits))), _)           => lits
       case Select(Apply(Apply(_, List(Apply(_, lits))), _), _) => lits
+      case Apply(_, List(Apply(_, lits))) => lits
     }
 
     val stringLiterals: Seq[String] = astLiterals.map {

@@ -14,10 +14,12 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
 import scala.util.matching._
+
+import language.experimental.macros
 
 object email {
   case class EmailAddress(address: String)
@@ -31,5 +33,8 @@ object email {
       else Right(EmailAddress(string))
   }
 
-  implicit class EmailStringContext(sc: StringContext) { val email = Prefix(EmailParser, sc) }
+  implicit class EmailStringContext(sc: StringContext) {
+    def email(expressions: String*): EmailAddress =
+      macro Macros.contextual[EmailParser.ContextType, EmailParser.type]
+  }
 }

@@ -14,9 +14,11 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.data
+package contextual.examples
 
 import contextual._
+
+import language.experimental.macros
 
 object binary {
 
@@ -44,7 +46,7 @@ object binary {
               "binary size is not an exact number of bytes")
 
           // Convert the string to a sequence of assignment operations
-          string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
+          string.grouped(8).map(Integer.parseInt(_, 2).toByte).toList.zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
@@ -67,5 +69,8 @@ object binary {
     }
   }
 
-  implicit class BinaryStringContext(sc: StringContext) { val bin = Prefix(BinParser, sc) }
+  implicit class BinaryStringContext(sc: StringContext) {
+    def bin(expressions: String*): Array[Byte] =
+      macro Macros.contextual[BinParser.ContextType, BinParser.type]
+  }
 }
