@@ -14,13 +14,22 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual
+package contextual.data
 
-/** A [[Context]] describes the nature of the position in an interpolated string where a
-  * substitution is made, and determines how values of a particular type should be interpreted
-  * in the given position. */
-trait Context {
-  /** A string representation which is meaningful for a singleton-object [[Context]] instance,
-    * calculated by reflecting on its class name. */
-  override def toString: String = getClass.getName.split("\\.").last.dropRight(1)
+import contextual._
+import scala.util.matching._
+
+object email {
+  case class EmailAddress(address: String)
+
+  private val validEmail: Regex =
+    """^[_A-Za-z0-9-\+]+(\.[_A-Za-z0-9-]+)*@[A-Za-z0-9-]+(\.[A-Za-z0-9]+)*(\.[A-Za-z]{2,})$""".r
+
+  object EmailParser extends Verifier[EmailAddress] {
+    def check(string: String) =
+      if(validEmail.findFirstMatchIn(string).isEmpty) Left((0, "could not parse email address"))
+      else Right(EmailAddress(string))
+  }
+
+  implicit class EmailStringContext(sc: StringContext) { val email = Prefix(EmailParser, sc) }
 }

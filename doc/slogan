@@ -1,0 +1,1 @@
+Statically-checked string interpolation

@@ -1,0 +1,5 @@
+- user-defined string interpolators
+- compile-time behavior can be defined on _literal_ parts of a string
+- runtime behavior can be defined on literal and interpolated parts of a string
+- simple type-based parsing for interpolated values
+- shorthand `Verifier` class for defining runtime and compiletime behavior together
