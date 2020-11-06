@@ -35,8 +35,8 @@ object Prefix {
     * @return a new instance of a [[Prefix]]
     */
   def apply(interpolator: Interpolator, stringContext: StringContext):
-      Prefix[interpolator.Output, interpolator.ContextType, interpolator.type] =
-    new Prefix[interpolator.Output, interpolator.ContextType, interpolator.type](interpolator, stringContext.parts)
+      Prefix[interpolator.Input, interpolator.Output, interpolator.ContextType, interpolator.type] =
+    new Prefix[interpolator.Input, interpolator.Output, interpolator.ContextType, interpolator.type](stringContext.parts)
 
 }
 
@@ -44,15 +44,14 @@ object Prefix {
   * typically using an implicit class. It has only a single method, [[apply]], with a signature
   * that's appropriate for fitting the shape of a desugared interpolated string application.
   *
-  * @param interpolator the [[Interpolator]] object to bind to this prefix
   * @param parts a sequence of the literal parts of the interpolated string, taken from the
   * `parts` value of the [[scala.StringContext]]
   * @tparam PrefixContextType the context inferred from `interpolator`'s type member
   * @tparam InterpolatorType the singleton type of the [[Interpolator]]
   */
-final class Prefix[OutputType, PrefixContextType <: Context, InterpolatorType <: Interpolator {
+final class Prefix[InputType, OutputType, PrefixContextType <: Context, InterpolatorType <: Interpolator {
     type ContextType = PrefixContextType; type Output = OutputType }]
-    (interpolator: InterpolatorType, parts: Seq[String]) {
+    (parts: Seq[String]) {
 
   /** The [[apply]] method is typically invoked as a result of the desugaring of a
     * [[scala.StringContext]] during parsing in Scalac. The method signature takes multiple
@@ -65,6 +64,6 @@ final class Prefix[OutputType, PrefixContextType <: Context, InterpolatorType <:
     *
     * @param expressions a sequence of expressions corresponding to each substitution
     * @return the evaluated result of the [[contextual]] macro */
-  def apply(expressions: Interpolator.Embedded[interpolator.Input, interpolator.type]*):
+  def apply(expressions: Interpolator.Embedded[InputType, InterpolatorType]*):
       OutputType = macro Macros.contextual[PrefixContextType, InterpolatorType]
 }
