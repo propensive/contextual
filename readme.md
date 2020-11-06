@@ -15,8 +15,10 @@ __Contextual__ makes it simple to write typesafe, statically-checked interpolate
 ## Features
 
 - user-defined string interpolators
+- introduce compile-time failures on invalid values, such as `url"htpt://example.com"`
 - compile-time behavior can be defined on _literal_ parts of a string
 - runtime behavior can be defined on literal and interpolated parts of a string
+- types of interpolated values can be context-dependent
 - simple type-based parsing for interpolated values
 - shorthand `Verifier` class for defining runtime and compiletime behavior together
 
