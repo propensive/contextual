@@ -7,8 +7,5 @@
 #
 # For more information, please visit https://propensive.com/fury/
 #
-layerRef	QmdJxSATboyipFr8HkukeoRWqmVTW64V8FdWiUHriyTbZb
-published	Some	url	fury://furore.dev/propensive/contextual
-		version	1.1
-		layerRef	QmdJxSATboyipFr8HkukeoRWqmVTW64V8FdWiUHriyTbZb
+layerRef	QmU7ZYy783nnYaE1ona34fVquPhbyMAHnNr1ZvLHdJ7h4u
 # vim: set noai ts=12 sw=12:
