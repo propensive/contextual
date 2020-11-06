@@ -35,6 +35,6 @@ object email {
 
   implicit class EmailStringContext(sc: StringContext) {
     def email(expressions: String*): EmailAddress =
-      macro Macros.contextual[EmailParser.ContextType, EmailParser.type]
+      macro Macros.contextual[EmailParser.type]
   }
 }

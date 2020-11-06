@@ -50,6 +50,6 @@ object xpath {
 
   implicit class XpathStringContext(sc: StringContext) {
     def xpath(expressions: String*): XPathExpression =
-      macro Macros.contextual[XpathParser.ContextType, XpathParser.type]
+      macro Macros.contextual[XpathParser.type]
   }
 }

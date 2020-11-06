@@ -37,6 +37,6 @@ object txt {
 
   implicit class TxtStringContext(sc: StringContext) {
     def txt(expressions: String*): String =
-      macro Macros.contextual[TxtParser.ContextType, TxtParser.type]
+      macro Macros.contextual[TxtParser.type]
   }
 }

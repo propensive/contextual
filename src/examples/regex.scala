@@ -52,7 +52,7 @@ object regex {
 
   implicit class RegexStringContext(sc: StringContext) {
     def regex(expressions: String*): Pattern =
-      macro Macros.contextual[RegexParser.ContextType, RegexParser.type]
+      macro Macros.contextual[RegexParser.type]
   }
 
 }

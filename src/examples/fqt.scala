@@ -58,6 +58,6 @@ object fqt {
 
   implicit class FqtStringContext(sc: StringContext) {
     def fqt(expressions: String*): Fqt =
-      macro Macros.contextual[FqtParser.ContextType, FqtParser.type]
+      macro Macros.contextual[FqtParser.type]
   }
 }

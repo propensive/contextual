@@ -63,7 +63,7 @@ object scalac {
 
   implicit class ScalacStringContext(sc: StringContext) {
     def scalac(expressions: String*): Compilation =
-      macro Macros.contextual[ScalacParser.ContextType, ScalacParser.type]
+      macro Macros.contextual[ScalacParser.type]
   }
 
 }

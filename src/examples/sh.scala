@@ -101,7 +101,7 @@ object shell {
   
   implicit class ShellStringContext(sc: StringContext) {
     def sh(expressions: String*): Process =
-      macro Macros.contextual[ShellContext, ShellInterpolator.type]
+      macro Macros.contextual[ShellInterpolator.type]
   }
 
 }

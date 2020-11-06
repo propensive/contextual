@@ -29,7 +29,7 @@ object bigDecimal {
 
   implicit class BigDecimalStringContext(sc: StringContext) {
     def d(expressions: String*): BigDecimal =
-      macro Macros.contextual[BigDecimalParser.ContextType, BigDecimalParser.type]
+      macro Macros.contextual[BigDecimalParser.type]
   }
 }
 
@@ -42,6 +42,6 @@ object bigInt {
 
   implicit class BigIntStringContext(sc: StringContext) {
     def i(expressions: String*): BigInt =
-      macro Macros.contextual[BigIntParser.ContextType, BigIntParser.type]
+      macro Macros.contextual[BigIntParser.type]
   }
 }

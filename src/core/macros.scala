@@ -21,7 +21,7 @@ import scala.reflect._, macros.whitebox
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
 object Macros {
 
-  def contextual[C <: Context, I <: Interpolator { type ContextType = C }: c.WeakTypeTag]
+  def contextual[I <: Interpolator: c.WeakTypeTag]
       (c: whitebox.Context)(expressions: c.Tree*): c.Tree = {
     import c.universe.{Literal => AstLiteral, _}
 
@@ -76,7 +76,8 @@ object Macros {
         }
 
         val contextObjects = types.map { t =>
-          (getModule[C](t.typeArgs(0)), getModule[C](t.typeArgs(1)))
+          (getModule[interpolator.ContextType](t.typeArgs(0)),
+              getModule[interpolator.ContextType](t.typeArgs(1)))
         }.toMap
 
         interpolator.Hole(idx, contextObjects)

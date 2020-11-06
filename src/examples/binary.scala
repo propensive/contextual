@@ -71,6 +71,6 @@ object binary {
 
   implicit class BinaryStringContext(sc: StringContext) {
     def bin(expressions: String*): Array[Byte] =
-      macro Macros.contextual[BinParser.ContextType, BinParser.type]
+      macro Macros.contextual[BinParser.type]
   }
 }

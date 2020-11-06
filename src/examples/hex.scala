@@ -76,6 +76,6 @@ object hex {
 
   implicit class HexStringContext(sc: StringContext) {
     def hex(expressions: String*): Array[Byte] =
-      macro Macros.contextual[HexParser.ContextType, HexParser.type]
+      macro Macros.contextual[HexParser.type]
   }
 }
