@@ -28,7 +28,7 @@ __Contextual__ makes it simple to write typesafe, statically-checked interpolate
 ## A simple example
 
 We can define a simple interpolator for URLs like this:
-```
+```scala
 import contextual._
 
 import language.experimental.macros
@@ -102,7 +102,7 @@ to be placed on substitutions.
 ### The `contextualize` method
 
 `Interpolator`s have one abstract method which needs implementing to provide any compile-time checking or parsing functionality:
-```
+```scala
 def contextualize(interpolation: StaticInterpolation): Seq[Context]
 ```
 
@@ -178,7 +178,7 @@ Different types are embedded by defining an implicit `Embedder` typeclass
 instance, which specifies with a number of `Case` instances how the type should
 be converted to the interpolator's `Input` type. For example, given a
 hypothetical XML interpolator, `Symbol`s could be embedded using,
-```
+```scala
 implicit val embedSymbolsInXml = XmlInterpolator.embed[Symbol](
   Case(AttributeKey, AfterAtt)(_.name),
   Case(AttributeVal, InTag) { s => '"'+s.name+'"' },
@@ -237,7 +237,7 @@ fury layer import -i propensive/contextual
 ```
 A binary is available on Maven Central as `com.propensive:contextual-core_<scala-version>:2.0.0`. This may be added
 to an [sbt](https://www.scala-sbt.org/) build with:
-```
+```scala
 libraryDependencies += "com.propensive" %% "contextual-core" % "2.0.0"
 ```
 
