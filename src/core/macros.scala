@@ -1,6 +1,6 @@
 /*
 
-    Contextual, version 1.5.0. Copyright 2016-20 Jon Pretty, Propensive OÜ.
+    Contextual, version 3.0.0. Copyright 2016-20 Jon Pretty, Propensive OÜ.
 
     The primary distribution site is: https://propensive.com/
 
@@ -21,7 +21,7 @@ import scala.reflect._, macros.whitebox
 /** Macro bundle class containing the main macro providing Contextual's functionality. */
 object Macros {
 
-  def contextual[I <: Interpolator: c.WeakTypeTag]
+  def contextual[C <: _root_.contextual.Context, I <: Interpolator { type ContextType = C }: c.WeakTypeTag]
       (c: whitebox.Context)(expressions: c.Tree*): c.Tree = {
     import c.universe.{Literal => AstLiteral, _}
 
@@ -29,7 +29,7 @@ object Macros {
     val astLiterals = c.prefix.tree match {
       case Select(Apply(_, List(Apply(_, lits))), _)           => lits
       case Select(Apply(Apply(_, List(Apply(_, lits))), _), _) => lits
-      case Apply(_, List(Apply(_, lits))) => lits
+      case Apply(_, List(Apply(_, lits)))                      => lits
     }
 
     val stringLiterals: Seq[String] = astLiterals.map {

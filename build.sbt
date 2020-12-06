@@ -2,7 +2,7 @@ ThisBuild / scalaVersion := "2.12.12"
 ThisBuild / organization := "com.propensive"
 ThisBuild / organizationName := "Propensive OÜ"
 ThisBuild / organizationHomepage := Some(url("https://propensive.com/"))
-ThisBuild / version := "2.0.0"
+ThisBuild / version := "3.0.0"
 
 ThisBuild / scmInfo := Some(
   ScmInfo(
