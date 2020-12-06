@@ -36,6 +36,12 @@ object Macros {
       case AstLiteral(Constant(str: String)) => str
     }
 
+    val moduleSymbol: Symbol = {
+      val moduleClass = weakTypeOf[I].typeSymbol
+      if (!moduleClass.isModuleClass) c.abort(c.enclosingPosition, s"""Type ${moduleClass} is not a module""")
+      moduleClass.owner.typeSignature.member(moduleClass.name.toTermName).asModule
+    }
+
     /* Get the "context" types derived from each parameter. */
     val appliedParameters: Seq[Tree] = c.macroApplication match {
       case Apply(_, params) => params
@@ -91,7 +97,7 @@ object Macros {
 
         def holeTrees: Seq[c.Tree] = expressions
         def literalTrees: Seq[c.Tree] = astLiterals
-        def interpolatorTerm: c.Symbol = weakTypeOf[I].termSymbol
+        def interpolatorTerm: c.Symbol = moduleSymbol.asTerm
       }
 
     val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(interpolation)
