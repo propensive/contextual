@@ -33,19 +33,19 @@ object Tests extends Suite("Probably tests") {
   def run(test: Runner) = {
     test("literal zero byte") {
       bin"00000000"
-    }.assert(_.to[List] == List(0.toByte))
+    }.assert(_.toList == List(0.toByte))
 
     test("literal 255 byte") {
       bin"11111111"
-    }.assert(_.to[List] == List(255.toByte))
+    }.assert(_.toList == List(255.toByte))
 
     test("literal 15 byte") {
       bin"00001111"
-    }.assert(_.to[List] == List(15.toByte))
+    }.assert(_.toList == List(15.toByte))
         
     test("literal two-byte sequence") {
       bin"0101010100001111"
-    }.assert(_.to[List] == List(85.toByte, 15.toByte))
+    }.assert(_.toList == List(85.toByte, 15.toByte))
 
     test("txt interpolator strips margin") {
       txt"""This is some text

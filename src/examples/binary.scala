@@ -44,7 +44,7 @@ object binary {
               "binary size is not an exact number of bytes")
 
           // Convert the string to a sequence of assignment operations
-          string.grouped(8).map(Integer.parseInt(_, 2).toByte).to[List].zipWithIndex.map {
+          string.grouped(8).map(Integer.parseInt(_, 2).toByte).toList.zipWithIndex.map {
             case (byte, idx) => q"array($idx) = $byte"
           }
 
