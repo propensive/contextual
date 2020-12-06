@@ -1,6 +1,6 @@
 /*
 
-    Contextual, version 1.5.0. Copyright 2016-20 Jon Pretty, Propensive OÜ.
+    Contextual, version 3.0.0. Copyright 2016-20 Jon Pretty, Propensive OÜ.
 
     The primary distribution site is: https://propensive.com/
 
