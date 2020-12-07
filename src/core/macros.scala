@@ -36,37 +36,18 @@ object Macros {
       case AstLiteral(Constant(str: String)) => str
     }
 
-    val moduleSymbol: Symbol = {
-      val moduleClass = weakTypeOf[I].typeSymbol
-      if (!moduleClass.isModuleClass) c.abort(c.enclosingPosition, s"""Type ${moduleClass} is not a module""")
-      moduleClass.owner.typeSignature.member(moduleClass.name.toTermName).asModule
-    }
-
     /* Get the "context" types derived from each parameter. */
     val appliedParameters: Seq[Tree] = c.macroApplication match {
       case Apply(_, params) => params
     }
 
-    /* Work out Java name of the class we want to instantiate. This is necessary because classes
-     * defined within objects have the names of their parent objects encoded in their class
-     * names, yet are presented in symbols in the standard "dotted" style, e.g.
-     * `package.Object.Class` is encoded as `package.Object$Class`. */
-    def javaClassName(sym: Symbol): String =
-      if(sym.owner.isPackage) sym.fullName
-      else if(sym.owner.isModuleClass) s"${javaClassName(sym.owner)}$$${sym.name}"
-      else s"${javaClassName(sym.owner)}.${sym.name}"
-
-    def getModule[M](tpe: Type): M = {
-      val typeName = javaClassName(tpe.typeSymbol)
-
-      try {
-        val cls = Class.forName(s"$typeName$$")
-        cls.getField("MODULE$").get(cls).asInstanceOf[M]
-      } catch {
-        case e: ClassNotFoundException =>
-          c.abort(c.enclosingPosition, s"""Class "${typeName}" could not be found. This usually means you are trying to use an interpolator in the same compilation unit as the one in which you defined it. Please try compiling interpolators first, separately from the code using them.""")
-      }
+    def moduleTerm(tpe: Type): TermSymbol = {
+      val moduleClass = tpe.typeSymbol
+      if (!moduleClass.isModuleClass) c.abort(c.enclosingPosition, s"""Type ${moduleClass} is not a module""")
+      moduleClass.owner.typeSignature.member(moduleClass.name.toTermName).asModule.asTerm
     }
+
+    def getModule[M](tpe: Type): M = c.eval(c.Expr[M](q"${moduleTerm(tpe)}"))
 
     /* Get an instance of the Interpolator class. */
     val interpolator = try getModule[I](weakTypeOf[I]) catch {
@@ -83,7 +64,7 @@ object Macros {
 
         val contextObjects = types.map { t =>
           (getModule[interpolator.ContextType](t.typeArgs(0)),
-              getModule[interpolator.ContextType](t.typeArgs(1)))
+            getModule[interpolator.ContextType](t.typeArgs(1)))
         }.toMap
 
         interpolator.Hole(idx, contextObjects)
@@ -97,7 +78,7 @@ object Macros {
 
         def holeTrees: Seq[c.Tree] = expressions
         def literalTrees: Seq[c.Tree] = astLiterals
-        def interpolatorTerm: c.Symbol = moduleSymbol.asTerm
+        def interpolatorTerm: c.Symbol = moduleTerm(weakTypeOf[I])
       }
 
     val contexts: Seq[interpolator.ContextType] = interpolator.contextualize(interpolation)
