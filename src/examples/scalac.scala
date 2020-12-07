@@ -19,8 +19,6 @@ package contextual.examples
 import contextual._
 import fqt._
 
-import language.experimental.macros
-
 object scalac {
 
   sealed trait Compilation {
@@ -62,8 +60,7 @@ object scalac {
   }
 
   implicit class ScalacStringContext(sc: StringContext) {
-    def scalac(expressions: String*): Compilation =
-      macro Macros.contextual[ScalacParser.type]
+    val scalac = Prefix(ScalacParser, sc)
   }
 
 }

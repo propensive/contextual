@@ -18,8 +18,6 @@ package contextual.examples
 
 import contextual._
 
-import language.experimental.macros
-
 object shell {
 
   case class Process(args: String*) {
@@ -100,8 +98,7 @@ object shell {
   )
   
   implicit class ShellStringContext(sc: StringContext) {
-    def sh(expressions: String*): Process =
-      macro Macros.contextual[ShellInterpolator.type]
+    val sh = Prefix(ShellInterpolator, sc)
   }
 
 }

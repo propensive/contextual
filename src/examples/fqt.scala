@@ -18,8 +18,6 @@ package contextual.examples
 
 import contextual._
 
-import language.experimental.macros
-
 object fqt {
 
   case class Fqt(name: String)
@@ -57,7 +55,6 @@ object fqt {
   }
 
   implicit class FqtStringContext(sc: StringContext) {
-    def fqt(expressions: String*): Fqt =
-      macro Macros.contextual[FqtParser.type]
+    val fqt = Prefix(FqtParser, sc)
   }
 }
