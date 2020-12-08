@@ -220,8 +220,6 @@ trait Interpolator { interpolator =>
         )"""
     }
 
-    println("Literals: '"+interpolation.literals+"'")
-
     q"""${interpolation.interpolatorTerm}.evaluate(
       new ${interpolation.interpolatorTerm}.RuntimeInterpolation(
         _root_.scala.collection.immutable.Seq(..${interpolation.literals}),
