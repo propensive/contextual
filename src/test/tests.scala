@@ -14,54 +14,16 @@
     See the License for the specific language governing permissions and limitations under the License.
 
 */
-package contextual.test
+package contextual
 
 import contextual.examples._
 
-import shell._
-import email._
-import binary._
-import hex._
 import scalac._
-import xpath._
-import txt._
-
 import probably._
 
-object Tests extends Suite("Probably tests") {
+object Tests extends Suite("Contextual tests") {
 
-  def run(test: Runner) = {
-    test("literal zero byte") {
-      bin"00000000"
-    }.assert(_.toList == List(0.toByte))
-
-    test("literal 255 byte") {
-      bin"11111111"
-    }.assert(_.toList == List(255.toByte))
-
-    test("literal 15 byte") {
-      bin"00001111"
-    }.assert(_.toList == List(15.toByte))
-        
-    test("literal two-byte sequence") {
-      bin"0101010100001111"
-    }.assert(_.toList == List(85.toByte, 15.toByte))
-
-    /*test("txt interpolator strips margin") {
-      txt"""This is some text
-           |This is a second line"""
-    }.assert(_ == "This is some text\nThis is a second line")*/
-  
-    /*test("simple XPath expression") {
-      xpath"foo / bar / baz"
-    }.assert { _ => true }*/
-    
-    test("failing XPath expression") {
-      scalac"""
-        import contextual.examples.xpath._
-        xpath"foo ^ bar"
-      """
-    }.assert(_ == TypecheckError("xpath: could not parse expression: Extra illegal tokens: '^', 'bar'"))
+  def run(test: Runner): Unit = {
   }
 }
 /*
