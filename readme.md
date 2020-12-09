@@ -235,10 +235,10 @@ or imported into an existing layer with,
 ```
 fury layer import -i propensive/contextual
 ```
-A binary is available on Maven Central as `com.propensive:contextual-core_<scala-version>:2.0.0`. This may be added
+A binary is available on Maven Central as `com.propensive:contextual-core_<scala-version>:3.0.1`. This may be added
 to an [sbt](https://www.scala-sbt.org/) build with:
 ```
-libraryDependencies += "com.propensive" %% "contextual-core" % "2.0.0"
+libraryDependencies += "com.propensive" %% "contextual-core" % "3.0.1"
 ```
 
 ## Contributing
