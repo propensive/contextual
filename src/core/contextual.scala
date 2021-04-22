@@ -1,40 +1,39 @@
 package contextual
 
-import scala.quoted._
+import scala.quoted.*
+import scala.compiletime.*
 
-trait Embeddable[T]:
-  def apply(x: T): Param
+trait Verifier[Wip]:
+  type Result
+  
+  def parse(state: Wip, next: String): Wip
+  def initial: Wip
+  def complete(value: Wip): Result
 
-case class Param(x: Expr[Any], embeddable: Embeddable[_])
 
-given conv[T: Embeddable] as Conversion[T, Param] = { x => null}
+trait Substitution[Wip, T]:
+  def embed(before: Wip, value: T): Wip
 
-given Embeddable[Int] = x => Param(null, null)
-given Embeddable[String] = x => Param(null, null)
+object Macros:
+  def expand[Wip: Type](target: Expr[Verifier[Wip]], ctx: Expr[StringContext], tuple: Expr[Tuple])(using Quotes): Expr[Any] =
+    import quotes.reflect.*
 
-class Context:
-  type Input
+    def substitutions(tuple: Expr[Tuple]): List[(Expr[Any], Expr[Substitution[Wip, _]])] = tuple match
+      case '{ $x: h *: t } =>
+        val tc = Expr.summon[Substitution[Wip, h]].getOrElse { report.error("Can't find substitution"); ??? }
+        ('{$x.head}, tc) :: substitutions('{$x.tail})
+      case _ =>
+        Nil
 
-  trait Embeddable[T]:
-    def apply(value: T): Input
+    val parts = ctx.value.get.parts
 
-object Context:
-  def barImpl(expr: Expr[Seq[Param]], parts: Expr[Seq[String]])
-             (using qc: QuoteContext)
-             : Expr[String] =
-    import qc.reflect._
+    def wrap(todo: Seq[String], tupleExprs: Seq[(Expr[Any], Expr[Substitution[Wip, _]])], expr: Expr[Wip]): Expr[Wip] =
+      if todo.isEmpty then expr
+      else
+        val (e, typeclass) = tupleExprs.head
+        val embedded = '{$typeclass.asInstanceOf[Substitution[Wip, Any]].embed($expr, $e)}
+        wrap(todo.tail, tupleExprs.tail, '{$target.parse($embedded, ${Expr(todo.head)})})
 
-    val constants: List[String] = parts.unseal match
-      case Inlined(_, _, Select(Inlined(_, _, Apply(_, List(Typed(Repeated(xs, _), y)))), _)) =>
-        xs.map { case Literal(Constant.String(str)) => str }
+    val wip: Expr[Wip] = wrap(ctx.value.get.parts.tail, substitutions(tuple), '{$target.parse($target.initial, ${Expr(ctx.value.get.parts.head)})})
 
-    expr.unseal match
-      case x as Inlined(_, _, Typed(Repeated(xs, _), y)) =>
-        println(x)
-        //println(xs)
-    '{"foo"}
-
-val ctx = Context()
-
-extension (inline sc: StringContext):
-  inline def bar(inline expr: Param*): String = ${Context.barImpl('expr, '{sc.parts})}
+    '{$target.complete($wip)}
