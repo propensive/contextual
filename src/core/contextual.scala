@@ -18,16 +18,16 @@ trait Interpolator[Input, State, Result]:
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], state: State, expr: Expr[State]): Expr[Result] =
       seq match
         case '{ $head: h } +: tail =>
-          val typeclass = Expr.summon[Insertion[Input, h]].getOrElse {
-            val typeName = TypeRepr.of[h].widen.show
+          val typeclass: Expr[Insertion[Input, h]] = Expr.summon[Insertion[Input, h]].getOrElse {
+            val typeName: String = TypeRepr.of[h].widen.show
             report.error(s"contextual: can't substitute $typeName into this interpolated string")
             ???
           }
           
-          val newState = parse(insert(state, None), parts.head)
-          val newExpr = '{$target.parse($target.insert($expr, Some($typeclass.embed($head))), ${Expr(parts.head)})}
+          val newState: State = parse(insert(state, None), parts.head)
+          val next = '{$target.parse($target.insert($expr, Some($typeclass.embed($head))), ${Expr(parts.head)})}
 
-          recur(tail, parts.tail, newState, newExpr)
+          recur(tail, parts.tail, newState, next)
         
         case _ =>
           '{$target.complete($expr)}
