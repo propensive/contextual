@@ -22,10 +22,12 @@ import scala.compiletime.*
 case class ParseError(str: String) extends Exception(str)
 
 trait Interpolator[Input, State, Result]:
-  def parse(state: State, next: String): State
+  import unsafeExceptions.canThrowAny
+
+  def parse(state: State, next: String): State throws ParseError
   def initial: State
-  def complete(value: State): Result
-  def insert(state: State, value: Option[Input]): State
+  def complete(value: State): Result throws ParseError
+  def insert(state: State, value: Option[Input]): State throws ParseError
 
   def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext],
                  seq: Expr[Seq[Any]])
@@ -56,14 +58,14 @@ trait Interpolator[Input, State, Result]:
       case Varargs(exprs) =>
         val parts = ctx.value.get.parts
         try recur(exprs, parts.tail, parse(initial, parts.head), '{$target.parse($target.initial,
-            ${Expr(parts.head)})})
+            ${Expr(parts.head)})(using CanThrow[ParseError])})
         catch case error@ParseError(message) =>
           report.error(s"contextual: $message")
-          throw error
+          ???
       
       case _ =>
         report.error("contextual: expected varargs")
-        throw Exception()
+        ???
 
 trait Insertion[Input, -T]:
   def embed(value: T): Input
