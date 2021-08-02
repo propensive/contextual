@@ -19,15 +19,15 @@ package contextual
 import scala.quoted.*
 import scala.compiletime.*
 
+import rudiments.*
+
 case class ParseError(str: String) extends Exception(str)
 
 trait Interpolator[Input, State, Result]:
-  import unsafeExceptions.canThrowAny
-
-  def parse(state: State, next: String): State throws ParseError
+  def parse(state: State, next: String): State exposes ParseError
   def initial: State
-  def complete(value: State): Result throws ParseError
-  def insert(state: State, value: Option[Input]): State throws ParseError
+  def complete(value: State): Result exposes ParseError
+  def insert(state: State, value: Option[Input]): State exposes ParseError
 
   def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext],
                  seq: Expr[Seq[Any]])
@@ -58,7 +58,7 @@ trait Interpolator[Input, State, Result]:
       case Varargs(exprs) =>
         val parts = ctx.value.get.parts
         try recur(exprs, parts.tail, parse(initial, parts.head), '{$target.parse($target.initial,
-            ${Expr(parts.head)})(using CanThrow[ParseError])})
+            ${Expr(parts.head)})/*(using CanThrow[ParseError])*/})
         catch case error@ParseError(message) =>
           report.error(s"contextual: $message")
           ???
