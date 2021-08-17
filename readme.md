@@ -185,13 +185,11 @@ given Insertion[List[String], Int] = int => List(int.toString)
 
 ## A First Interpolator
 
-Here is a trivial interpolator:
+Here is a trivial interpolator which can parse, for example, `hex"a948b0${x}710bff"`, and return an
+`IArray[Byte]`:
 ```scala
 object Hex extends Interpolator[Long, String, IArray[Byte]]:
   def initial: String = ""
-
-  def hexChar(ch: Char): Boolean =
-    ch.isDigit || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <: 'F'
 
   def parse(state: String, next: String): String =
     if next.forall(hexChar(_)) then state+next
@@ -204,9 +202,12 @@ object Hex extends Interpolator[Long, String, IArray[Byte]]:
   
   def complete(state: String): IArray[Byte] =
     IArray.from(convertStringToByteArray(state))
+  
+  private def hexChar(ch: Char): Boolean =
+    ch.isDigit || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <: 'F'
 ```
 
-We can bind this to the prefix, `hex` with:
+Having defined this interpolator, we can bind it to the prefix, `hex` with:
 ```scala
 extension (ctx: StringContext)
   transparent inline def hex(inline parts: Any*): IArray[Byte] =
@@ -215,7 +216,7 @@ extension (ctx: StringContext)
 
 Note that this should be defined in a different source file from the object `Hex`.
 
-It now becomes possible 
+
 
 ## Status
 
