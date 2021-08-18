@@ -250,14 +250,19 @@ We suggest that all contributors read the [Contributing Guide](/contributing.md)
 contributing to Contextual easier.
 
 Please __do not__ contact project maintainers privately with questions, as other users cannot then benefit from
-the answers.
+answers given in private.
 
 ## Author
 
-Contextual was designed and developed by [Jon Pretty](https://twitter.com/propensive), and commercial support and
-training is available from [Propensive O&Uuml;](https://propensive.com/).
+Contextual was designed and developed by Jon Pretty, and commercial support and training is available from
+[Propensive O&Uuml;](https://propensive.com/).
 
 
+
+## Name
+
+Contextual takes its name from its ability to provide context-aware substitutions in interpolated
+strings.
 
 ## License
 
