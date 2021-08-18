@@ -1,3 +1,5 @@
+[<img src="https://img.shields.io/discord/633198088311537684?color=8899f7&label=DISCORD&style=for-the-badge" height="24">](https://discord.gg/v7CjtbnwDq)
+[<img src="https://vent.dev/badge/propensive/contextual" height="24">](https://vent.dev/)
 <img src="/doc/images/github.png" valign="middle">
 
 # Contextual
