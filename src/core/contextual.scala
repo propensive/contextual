@@ -37,7 +37,7 @@ trait Interpolator[Input, State, Result]:
             (using Quotes, Type[Input], Type[State], Type[Result]): Expr[Result] =
     import quotes.reflect.*
 
-    def shift(pos: Position, offset: Int, length: Int) =
+    def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
     def rethrow[T](blk: => T, pos: Position): T =
@@ -50,6 +50,15 @@ trait Interpolator[Input, State, Result]:
                   expr: Expr[State]): Expr[Result] =
       seq match
         case '{ $head: h } +: tail =>
+
+          Expr.summon[Insertion[Input, h]].foreach { expr =>
+            expr match
+              case '{ $e: InsertionWithDefault[Input, `h`, eType] } =>
+                report.warning(TypeRepr.of[eType].show)
+              case '{ $e: eType } =>
+                report.warning(TypeRepr.of[eType].widen.show)
+          }
+
           val typeclass: Expr[Insertion[Input, h]] = Expr.summon[Insertion[Input, h]].getOrElse {
             val typeName: String = TypeRepr.of[h].widen.show
             
@@ -99,3 +108,5 @@ trait Interpolator[Input, State, Result]:
 
 trait Insertion[Input, -T]:
   def embed(value: T): Input
+
+trait InsertionWithDefault[Input, -T, S <: String & Singleton] extends Insertion[Input, T]
