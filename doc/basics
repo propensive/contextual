@@ -30,39 +30,51 @@ So in general, any interpolated string can be represented as _n_ string literals
 known at compiletime, and _n - 1_ variables (of various types), whose values are not known until
 runtime.
 
-Contextual's `Interpolator` interface provides a set of four abstract methods—`initial`, `parse`,
-`insert` and `complete`—which are invoked, in a particular order, once at compiletime, _without_ the
-substituted values, and again at runtime, _with_ the substituted values.
+Contextual's `Interpolator` interface provides a set of five abstract methods—`initial`, `parse`,
+`insert`, `skip` and `complete`—which are invoked, in a particular order, once at compiletime,
+_without_ the substituted values (since they are not known!), and again at runtime, _with_ the
+substituted values (when they are known).
+
+The method `skip` is used at compiletime, and `insert` at runtime.
 
 The methods are always invoked in the same order: first `initial`; then alternately `parse` and
-`insert`, some number of times, for each string literal and each substitution (respectively); and
-finally `complete` to produce a result. `insert` may never be invoked if there are no substitutions,
-but `parse` will always be invoked once more than `insert`.
+`insert`/`skip`, some number of times, for each string literal and each substitution (respectively);
+and finally `complete` to produce a result. `insert` may never be invoked if there are no
+substitutions, but `parse` will always be invoked once more than `insert`.
 
 For example, for a string with two substitutions, the invocation order would be:
 ```
 initial -> parse -> insert -> parse -> insert -> parse -> complete
 ```
+at runtime, or,
+```
+initial -> parse -> skip -> parse -> skip -> parse -> complete
+```
+at compiletime.
 
 An object encoding the interpolator's state is returned by each of these method calls, and is passed
 as input to the next—with the exception of `complete`, which should return the final value that the
-interpolated string will evaluate to.
+interpolated string will evaluate to. This is where final checks can be carried out to check that
+the interpolated string is in a complete final state.
 
 In other words, each segment of an interpolated string is read in turn, to incrementally build up
 a working representation of the incomplete information in the interpolated string. And at the end,
 it is converted into the return value.
 
-The separation into `parse` and `insert` calls means that the static parts of the interpolated
-string can be parsed the same way at both compiletime or runtime, while the dynamic parts can be
-interpreted at runtime when they're known, and their absence handled at compiletime when they're not
-known.
+The separation into `parse` and `insert`/`skip` calls means that the static parts of the
+interpolated string can be parsed the same way at both compiletime or runtime, while the dynamic
+parts may be interpreted at runtime when they're known, and their absence handled in some way at
+compiletime when they're not known.
+
+Of course, `skip` could be implemented to delegate to `insert` using a dummy value.
 
 Here are the signatures for each method in the `Interpolator` type:
 ```scala
 trait Interpolator[Input, State, Result]:
   def initial: State
   def parse(state: State, next: String): State
-  def insert(state: State, value: Option[Input]): State
+  def insert(state: State, value: Input): State
+  def skip(state: State): State
   def complete(value: State): Return
 ```
 
@@ -72,9 +84,8 @@ document structure. `Input` is a type chosen to represent the types of all subst
 would be a common choice for this, but there may be utility in using richer types, too. And `Return`
 is the type that the interpolated string will ultimately evaluate to.
 
-In addition to `parse`, `insert` and `complete` taking `State` instances as input, note that `parse`
-always takes a `String`, and `insert` takes an `Option[Input]`: `Some(input)` at runtime, but `None`
-at compiletime.
+In addition to `parse`, `insert`, `skip` and `complete` taking `State` instances as input, note that
+`parse` always takes a `String`, and `insert` takes an `Input`.
 
 Any of the methods may throw an `InterpolationError` exception, with a message. At compiletime,
 these will be caught, and turned into compile errors. Additionally, a range of characters may be
@@ -115,19 +126,20 @@ second parameter of `InterpolationError` allows an offset to be specified, relat
 the literal part currently being parsed, and a third parameter allows its length to be specified.
 
 For example, if we were parsing `url"https://example.ocm/$dir/images/$img"`, and wanted to highlight
-the mistake in the invalid TLD `ocm`, we would throw,
+the mistake in the invalid TLD `.ocm`, we would throw,
 ```scala
 InterpolationError("not a valid TLD", 15, 4)
 ```
 during the first invocation of `parse`, and the Scala compiler would highlight `.ocm` as the error
-location.
+location: in this example, `15` is the offset from the start of this part of the string to the
+error location, and `4` is the length of the error.
 
 ## Binding an interpolator
 
 A small amount of boilerplate is needed to bind an `Interpolator` object, for example `Abc`, to a
 prefix, i.e. the letters `abc` in the interpolated string, `abc""`:
 ```scala
-extension (ctx: StringContext)
+extension (inline ctx: StringContext)
   transparent inline def abc(inline parts: Any*): Return =
     ${Abc.expand('Abc, 'ctx, 'parts)}
 ```
@@ -159,6 +171,35 @@ given Insertion[List[String], String] = List(_)
 given Insertion[List[String], List[String]] = identity(_)
 given Insertion[List[String], Int] = int => List(int.toString)
 ```
+
+## Substitutions
+
+A `Substitution` is a typeclass that's almost identical to `Insertion` (and is, indeed, a subtype of
+`Insertion`), but takes an additional type parameter: a singleton `String` literal. The behavior of
+a given `Substitution` will be identical to a given `Insertion` at runtime, but differs at
+compiletime:
+
+During macro expansion, instead of invoking `skip`, the `substitute` method will be called instead,
+passing it the `String` value taken from the additional type parameter to `Substitution`.
+
+For example the given definitions,
+```scala
+given Substitution[XInput, String, "\"\""] = str => StrInput(str)
+given Substitution[XInput, Int, "0"] = int => IntInput(int)
+```
+would mean that an `Int`, `int`, and a `String`, `str`, substituted into an interpolated string
+would result in invocations of, `substitute(state, "0")` and `substitute(state, "\"\"")`
+respectively.
+
+By default, the `substitute` method simply delegates to `parse`, which takes the same parameters,
+and will parse the substituted strings in a predictable way. Any user-defined `substitute` method
+implementation will therefore need the `override` modifier, but can provide its own implementation
+that is distinct from `parse`.
+
+The benefit of `Substitution` over `Insertion` is that the compiletime interpretation of the
+interpolated string may be dependent on the types inserted, distinguishing between types on the
+basis of the singleton `String` literal included in the given's signature. This compares to the
+`skip` method which offers no more information about a substitution than its existence.
 
 ## A First Interpolator
 
