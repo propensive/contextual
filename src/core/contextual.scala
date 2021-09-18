@@ -21,7 +21,7 @@ import scala.compiletime.*
 
 import rudiments.*
 
-class ContextualError(msg: String) extends Exception(str"contextual: $msg")
+class ContextualError(msg: String) extends Exception(s"contextual: $msg")
 
 case class InterpolationError(msg: String, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends ContextualError(msg)
@@ -59,7 +59,7 @@ trait Interpolator[Input, State, Result]:
 
           val (newState, typeclass) = Expr.summon[Insertion[Input, h]].map {
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
-              val substitution = TypeRepr.of[sub] match
+              val substitution: String = TypeRepr.of[sub] match
                 case ConstantType(StringConstant(str)) => str
             
               (rethrow(parse(rethrow(substitute(state, substitution), expr.asTerm.pos), parts.head),
