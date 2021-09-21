@@ -57,10 +57,18 @@ trait Interpolator[Input, State, Result]:
       seq match
         case '{ $head: h } +: tail =>
 
-          val (newState, typeclass) = Expr.summon[Insertion[Input, h]].map {
+          val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold {
+            val typeName: String = TypeRepr.of[h].widen.show
+            
+            report.throwError(
+              s"contextual: can't substitute $typeName into this interpolated string",
+              head.asTerm.pos
+            )
+          } {
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
                 case ConstantType(StringConstant(str)) => str
+                case _                                 => throw Impossible("should not happen")
             
               (rethrow(parse(rethrow(substitute(state, substitution), expr.asTerm.pos), parts.head),
                   positions.head), typeclass)
@@ -68,14 +76,6 @@ trait Interpolator[Input, State, Result]:
             case '{ $typeclass: eType } =>
               (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), parts.head),
                   positions.head), typeclass)
-          
-          }.getOrElse {
-            val typeName: String = TypeRepr.of[h].widen.show
-            
-            report.throwError(
-              s"contextual: can't substitute $typeName into this interpolated string",
-              head.asTerm.pos
-            )
           }
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
