@@ -60,7 +60,7 @@ trait Interpolator[Input, State, Result]:
           val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold {
             val typeName: String = TypeRepr.of[h].widen.show
             
-            report.throwError(
+            report.errorAndAbort(
               s"contextual: can't substitute $typeName into this interpolated string",
               head.asTerm.pos
             )
@@ -76,6 +76,9 @@ trait Interpolator[Input, State, Result]:
             case '{ $typeclass: eType } =>
               (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), parts.head),
                   positions.head), typeclass)
+            
+            case _ =>
+              throw Impossible("this case should never match")
           }
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
@@ -90,8 +93,8 @@ trait Interpolator[Input, State, Result]:
     seq match
       case Varargs(exprs) =>
         val parts = ctx.value.getOrElse {
-          report.throwError(s"contextual: the StringContext extension method parameter does not "+
-              "appear to be inline")
+          report.errorAndAbort(s"contextual: the StringContext extension method parameter does "+
+                                     "not appear to be inline")
         }.parts
         
         val positions: Seq[Position] = ctx match
@@ -107,13 +110,13 @@ trait Interpolator[Input, State, Result]:
             '{$target.parse($target.initial, ${Expr(parts.head)})})
         catch
           case error@PositionalError(message, pos) =>
-            report.throwError(s"contextual: $message", pos)
+            report.errorAndAbort(s"contextual: $message", pos)
 
           case error@InterpolationError(message, _, _) =>
-            report.throwError(s"contextual: $message", Position.ofMacroExpansion)
+            report.errorAndAbort(s"contextual: $message", Position.ofMacroExpansion)
       
       case _ =>
-        report.throwError("contextual: expected varargs")
+        report.errorAndAbort("contextual: expected varargs")
 
 trait Insertion[Input, -T]:
   def embed(value: T): Input
