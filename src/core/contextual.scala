@@ -21,21 +21,18 @@ import scala.compiletime.*
 
 import rudiments.*
 
-class ContextualError(msg: String) extends Exception(s"contextual: $msg")
+class ContextualError(msg: String) extends Error(s"contextual: $msg")
 
 case class InterpolationError(msg: String, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends ContextualError(msg)
 
 trait Interpolator[Input, State, Result]:
   def initial: State
-  def parse(state: State, next: String): State exposes InterpolationError
-  def skip(state: State): State exposes InterpolationError
-  
-  def substitute(state: State, value: String): State exposes InterpolationError =
-    parse(state, value)
-  
-  def insert(state: State, value: Input): State exposes InterpolationError
-  def complete(value: State): Result exposes InterpolationError
+  def parse(state: State, next: String): State
+  def skip(state: State): State
+  def substitute(state: State, value: String): State = parse(state, value)
+  def insert(state: State, value: Input): State
+  def complete(value: State): Result
 
   def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext],
                  seq: Expr[Seq[Any]])
@@ -50,7 +47,7 @@ trait Interpolator[Input, State, Result]:
         throw PositionalError(msg, shift(pos, offset.otherwise(0),
             length.otherwise(pos.end - pos.start - offset.otherwise(0))))
 
-    case class PositionalError(msg: String, position: Position) extends Exception(msg)
+    case class PositionalError(msg: String, position: Position) extends Error(msg)
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
                   expr: Expr[State]): Expr[Result] =
@@ -106,8 +103,8 @@ trait Interpolator[Input, State, Result]:
           case _ =>
             throw Impossible("expected expression of the form `StringContext.apply(args)`")
         
-        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, parts.head), positions.head),
-            '{$target.parse($target.initial, ${Expr(parts.head)})})
+        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, parts.head),
+            positions.head), '{$target.parse($target.initial, ${Expr(parts.head)})})
         catch
           case error@PositionalError(message, pos) =>
             report.errorAndAbort(s"contextual: $message", pos)
