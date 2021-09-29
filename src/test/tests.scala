@@ -18,6 +18,8 @@ package contextual
 
 import probably.*
 
+import unsafeExceptions.canThrowAny
+
 object Tests extends Suite("Contextual Tests"):
   def run(using Runner): Unit =
     ()
