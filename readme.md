@@ -301,8 +301,7 @@ Contextual was designed and developed by Jon Pretty, and commercial support and 
 
 ## Name
 
-Contextual takes its name from its ability to provide context-aware substitutions in interpolated
-strings.
+Contextual takes its name from its ability to provide context-aware substitutions in interpolated strings.
 
 ## License
 
