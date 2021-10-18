@@ -65,7 +65,7 @@ trait Interpolator[Input, State, Result]:
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
                 case ConstantType(StringConstant(str)) => str
-                case _                                 => throw Impossible("should not happen")
+                case other                             => throw Impossible(s"found $other instead of ConstantType")
             
               (rethrow(parse(rethrow(substitute(state, substitution), expr.asTerm.pos), parts.head),
                   positions.head), typeclass)
