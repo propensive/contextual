@@ -1,4 +1,5 @@
 {
+  "imports": ["rudiments/build.ire"],
   "config": {
     "scalac": {
       "version": "3.1.1-RC1-bin-SNAPSHOT",
@@ -9,26 +10,13 @@
         "-Wunused:all",
         "-O", "-deprecation",
         "-O", "-feature",
-        "-O", "-new-syntax"
+        "-O", "-new-syntax",
+        "-Yrequire-targetName",
+        "-Ysafe-init",
+        "-Ycheck-all-patmat",
+        "-Yexplicit-nulls"
       ]
     }
-  },
-  "publishing": {
-    "username": "propensive",
-    "group": "com.propensive",
-    "url": "https://propensive.com/opensource/",
-    "organization": {
-      "name": "Propensive",
-      "url": "https://propensive.com/"
-    },
-    "git": "github.com/propensive",
-    "developers": [
-      {
-        "id": "propensive",
-        "name": "Jon Pretty",
-        "url": "https://github.com/propensive"
-      }
-    ]
   },
   "modules": [
     {
