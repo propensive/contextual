@@ -54,18 +54,22 @@ trait Interpolator[Input, State, Result]:
       seq match
         case '{ $head: h } +: tail =>
 
-          val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold {
+          def notFound: Nothing =
             val typeName: String = TypeRepr.of[h].widen.show
             
             report.errorAndAbort(
               s"contextual: can't substitute $typeName into this interpolated string",
               head.asTerm.pos
             )
-          } {
+
+          val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold(notFound):
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
-                case ConstantType(StringConstant(str)) => str
-                case other                             => throw Impossible(s"found $other instead of ConstantType")
+                case ConstantType(StringConstant(string)) =>
+                  string
+                
+                case other =>
+                  throw Impossible(s"found $other instead of ConstantType")
             
               (rethrow(parse(rethrow(substitute(state, substitution), expr.asTerm.pos), parts.head),
                   positions.head), typeclass)
@@ -76,7 +80,6 @@ trait Interpolator[Input, State, Result]:
             
             case _ =>
               throw Impossible("this case should never match")
-          }
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               ${Expr(parts.head)})}
@@ -89,10 +92,10 @@ trait Interpolator[Input, State, Result]:
     
     seq match
       case Varargs(exprs) =>
-        val parts = ctx.value.getOrElse {
+        val parts = ctx.value.getOrElse:
           report.errorAndAbort(s"contextual: the StringContext extension method parameter does "+
                                      "not appear to be inline")
-        }.parts
+        .parts
         
         val positions: Seq[Position] = ctx match
           case '{ (${sc}: StringContext.type).apply(($parts: Seq[String])*) } =>
