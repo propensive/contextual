@@ -14,7 +14,8 @@
         "-Yrequire-targetName",
         "-Ysafe-init",
         "-Ycheck-all-patmat",
-        "-Yexplicit-nulls"
+        "-Yexplicit-nulls",
+	"-Yno-predef"
       ]
     }
   },
