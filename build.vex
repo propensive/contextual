@@ -1,5 +1,5 @@
 {
-  "imports": ["../rudiments/build.ire"],
+  "imports": ["../rudiments/build.vex"],
   "config": {
     "scalac": {
       "version": "3.1.2-RC1-bin-SNAPSHOT",
