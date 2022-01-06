@@ -28,9 +28,9 @@ trait Interpolator[Input, State, Result]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
 
   def initial: State
-  def parse(state: State, next: String): State
+  def parse(state: State, next: Text): State
   def skip(state: State): State
-  def substitute(state: State, value: String): State = parse(state, value)
+  def substitute(state: State, value: Text): State = parse(state, value)
   def insert(state: State, value: Input): State
   def complete(value: State): Result
 
@@ -74,18 +74,18 @@ trait Interpolator[Input, State, Result]:
                 case other =>
                   throw Impossible(s"found $other instead of ConstantType")
             
-              (rethrow(parse(rethrow(substitute(state, substitution), expr.asTerm.pos), parts.head),
-                  positions.head), typeclass)
+              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
+                  Text(parts.head)), positions.head), typeclass)
           
             case '{ $typeclass: eType } =>
-              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), parts.head),
+              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
                   positions.head), typeclass)
             
             case _ =>
               throw Impossible("this case should never match")
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
-              ${Expr(parts.head)})}
+              Text(${Expr(parts.head)}))}
 
           recur(tail, parts.tail, positions.tail, newState, next)
         
@@ -109,8 +109,8 @@ trait Interpolator[Input, State, Result]:
           case _ =>
             throw Impossible("expected expression of the form `StringContext.apply(args)`")
         
-        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, parts.head),
-            positions.head), '{$target.parse($target.initial, ${Expr(parts.head)})})
+        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
+            positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
         catch
           case err: PositionalError => err match
             case PositionalError(message, pos) =>
