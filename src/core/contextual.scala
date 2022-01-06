@@ -1,5 +1,5 @@
 /*
-    Contextual, version 2.4.0. Copyright 2016-21 Jon Pretty, Propensive OÜ.
+    Contextual, version 2.4.0. Copyright 2016-22 Jon Pretty, Propensive OÜ.
 
     The primary distribution site is: https://propensive.com/
 
@@ -21,12 +21,12 @@ import scala.compiletime.*
 
 import rudiments.*
 
-class ContextualError(msg: String) extends Error(s"contextual: $msg")
-
-case class InterpolationError(msg: String, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-extends ContextualError(msg)
+case class InterpolationError(message: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset) extends Error
 
 trait Interpolator[Input, State, Result]:
+
+  given CanThrow[InterpolationError] = compiletime.erasedValue
+
   def initial: State
   def parse(state: State, next: String): State
   def skip(state: State): State
@@ -43,11 +43,14 @@ trait Interpolator[Input, State, Result]:
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
     def rethrow[T](blk: => T, pos: Position): T =
-      try blk catch case InterpolationError(msg, offset, length) =>
-        throw PositionalError(msg, shift(pos, offset.otherwise(0),
-            length.otherwise(pos.end - pos.start - offset.otherwise(0))))
+      import unsafeExceptions.canThrowAny
+      try blk catch case err: InterpolationError =>
+        err match
+          case InterpolationError(msg, offset, length) =>
+            throw PositionalError(msg, shift(pos, offset.otherwise(0),
+                length.otherwise(pos.end - pos.start - offset.otherwise(0))))
 
-    case class PositionalError(msg: String, position: Position) extends Error(msg)
+    case class PositionalError(message: Text, position: Position) extends Error
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
                   expr: Expr[State]): Expr[Result] =
@@ -109,11 +112,13 @@ trait Interpolator[Input, State, Result]:
         try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, parts.head),
             positions.head), '{$target.parse($target.initial, ${Expr(parts.head)})})
         catch
-          case error@PositionalError(message, pos) =>
-            report.errorAndAbort(s"contextual: $message", pos)
+          case err: PositionalError => err match
+            case PositionalError(message, pos) =>
+              report.errorAndAbort(s"contextual: $message", pos)
 
-          case error@InterpolationError(message, _, _) =>
-            report.errorAndAbort(s"contextual: $message", Position.ofMacroExpansion)
+          case err: InterpolationError => err match
+            case InterpolationError(message, _, _) =>
+              report.errorAndAbort(s"contextual: $message", Position.ofMacroExpansion)
       
       case _ =>
         report.errorAndAbort("contextual: expected varargs")
