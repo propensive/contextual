@@ -25,8 +25,6 @@ case class InterpolationError(message: Text, offset: Maybe[Int] = Unset, length:
 
 trait Interpolator[Input, State, Result]:
 
-  given CanThrow[InterpolationError] = compiletime.erasedValue
-
   protected def initial: State
   protected def parse(state: State, next: Text): State
   protected def skip(state: State): State
@@ -43,7 +41,6 @@ trait Interpolator[Input, State, Result]:
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
     def rethrow[T](blk: => T, pos: Position): T =
-      import unsafeExceptions.canThrowAny
       try blk catch case err: InterpolationError =>
         err match
           case InterpolationError(msg, offset, length) =>
