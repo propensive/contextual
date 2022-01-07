@@ -27,12 +27,12 @@ trait Interpolator[Input, State, Result]:
 
   given CanThrow[InterpolationError] = compiletime.erasedValue
 
-  def initial: State
-  def parse(state: State, next: Text): State
-  def skip(state: State): State
-  def substitute(state: State, value: Text): State = parse(state, value)
-  def insert(state: State, value: Input): State
-  def complete(value: State): Result
+  protected def initial: State
+  protected def parse(state: State, next: Text): State
+  protected def skip(state: State): State
+  protected def substitute(state: State, value: Text): State = parse(state, value)
+  protected def insert(state: State, value: Input): State
+  protected def complete(value: State): Result
 
   def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext],
                  seq: Expr[Seq[Any]])
