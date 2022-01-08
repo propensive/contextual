@@ -1,4 +1,7 @@
 {
+  "repos": [
+    { "base": "../rudiments", "url": "https://github.com/propensive/rudiments" }
+  ],
   "imports": ["../rudiments/build.vex"],
   "config": {
     "scalac": {

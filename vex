@@ -1,0 +1,32 @@
+#!/bin/sh
+# --------------------------
+# Vex Launcher version 0.2.0
+# --------------------------
+#
+# Vex is a simplistic build tool for Scala. This launcher script will download and run Vex, replacing this
+# script in the process.
+#
+# For more information, see https://github.com/propensive/vex/
+#
+# Vex, version 0.2.0. Copyright 2021 Jon Pretty, Propensive OÜ.
+
+if [ ! "$(command -v java)" ]
+then
+  echo "It does not look like Java is installed. The 'java' command must be available on the path."
+elif [ "$(java -version 2>&1 | head -n1 | awk -F '"' '{print $2}' | awk -F '.' '{print $1}')" -lt "11" ]
+then
+  echo "It looks like the install version of Java is not recent enough. Java 11 is required to run Vex."
+elif [ ! "$(command -v curl)" ]
+then
+  echo "The 'curl' command must be available to download Vex. Please install Curl and try again."
+else
+  echo "Downloading Vex 0.2.0..."
+  curl -Lso "$0.tmp" "https://github.com/propensive/vex/releases/download/v0.2.0/vex-0.2.0"
+  echo "Downloaded $(du -sh "$0.tmp" | cut -d'	' -f1)"
+  echo 'Launching Vex for the first time...'
+  chmod +x "$0.tmp"
+  mv "$0.tmp" "$0"
+  exec "$0" "$@"
+fi
+echo "Please install Java version 11 or later. See https://adoptium.net/ for free OpenJDK distributions."
+exit 1
