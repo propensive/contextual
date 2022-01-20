@@ -1,8 +1,13 @@
 {
   "repos": [
-    { "base": "../rudiments", "url": "https://github.com/propensive/rudiments" }
+    {
+      "base": "../rudiments",
+      "url": "https://github.com/propensive/rudiments"
+    }
   ],
-  "imports": ["../rudiments/build.vex"],
+  "imports": [
+    "../rudiments/build.vex"
+  ],
   "publishing": {
     "username": "propensive",
     "group": "com.propensive",
@@ -25,10 +30,16 @@
     {
       "name": "Contextual",
       "id": "contextual/core",
-      "links": ["rudiments/core"],
-      "sources": ["src/core"],
-      "version": "0.2.0",
-      "docs": ["doc"]
+      "links": [
+        "rudiments/core"
+      ],
+      "sources": [
+        "src/core"
+      ],
+      "version": "0.4.0",
+      "docs": [
+        "doc"
+      ]
     }
   ]
 }
