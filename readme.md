@@ -19,6 +19,10 @@ at compiletime and interpreted at runtime, writing very ordinary user code with 
 - runtime behavior can be defined on literal and interpolated parts of a string
 - types of interpolated values can be context-dependent
 
+## Availability
+
+The current latest release of Contextual is __0.4.0__.
+
 ## Getting Started
 
 ## About Interpolators
@@ -261,11 +265,11 @@ Note that this should be defined in a different source file from the object `Hex
 
 ## Related Projects
 
-The following _Niveau_ libraries are dependencies of _Contextual_:
+The following _Scala One_ libraries are dependencies of _Contextual_:
 
 [![Rudiments](https://github.com/propensive/rudiments/raw/main/doc/images/128x128.png)](https://github.com/propensive/rudiments/) &nbsp;
 
-The following _Niveau_ libraries are dependents of _Contextual_:
+The following _Scala One_ libraries are dependents of _Contextual_:
 
 [![Gossamer](https://github.com/propensive/gossamer/raw/main/doc/images/128x128.png)](https://github.com/propensive/gossamer/) &nbsp;
 
