@@ -6,7 +6,7 @@
     }
   ],
   "imports": [
-    "../rudiments/build.vex"
+    "../rudiments/build.irk"
   ],
   "publishing": {
     "username": "propensive",
