@@ -1,6 +1,6 @@
 [<img alt="GitHub Workflow" src="https://img.shields.io/github/workflow/status/propensive/contextual/Build/main?style=for-the-badge" height="24">](https://github.com/propensive/contextual/actions)
 [<img src="https://img.shields.io/maven-central/v/com.propensive/contextual-core?color=2465cd&style=for-the-badge" height="24">](https://search.maven.org/artifact/com.propensive/contextual-core)
-[<img src="https://img.shields.io/discord/633198088311537684?color=8899f7&label=DISCORD&style=for-the-badge" height="24">](https://discord.gg/v7CjtbnwDq)
+[<img src="https://img.shields.io/discord/633198088311537684?color=8899f7&label=DISCORD&style=for-the-badge" height="24">](https://discord.gg/7b6mpF6Qcf)
 <img src="/doc/images/github.png" valign="middle">
 
 # Contextual
