@@ -1,6 +1,6 @@
 #!/bin/sh
 # --------------------------
-# Irk Launcher version 0.3.0
+# Irk Launcher version 0.5.0
 # --------------------------
 #
 # Irk is a simplistic build tool for Scala. This launcher script will download and run Irk, replacing this
@@ -8,7 +8,7 @@
 #
 # For more information, see https://github.com/propensive/irk/
 #
-# Irk, version 0.3.0. Copyright 2021 Jon Pretty, Propensive OÜ.
+# Irk, version 0.5.0. Copyright 2021 Jon Pretty, Propensive OÜ.
 
 if [ ! "$(command -v java)" ]
 then
@@ -20,8 +20,8 @@ elif [ ! "$(command -v curl)" ]
 then
   echo "The 'curl' command must be available to download Irk. Please install Curl and try again."
 else
-  echo "Downloading Irk 0.3.0..."
-  curl -Lso "$0.tmp" "https://github.com/propensive/irk/releases/download/v0.3.0/irk-0.3.0"
+  echo "Downloading Irk 0.5.0..."
+  curl -Lso "$0.tmp" "https://github.com/propensive/irk/releases/download/v0.5.0/irk-0.5.0"
   echo "Downloaded $(du -sh "$0.tmp" | cut -d'	' -f1)"
   echo 'Launching Irk for the first time...'
   chmod +x "$0.tmp"
