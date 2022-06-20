@@ -73,7 +73,7 @@ trait Interpolator[Input, State, Result]:
                   string
                 
                 case other =>
-                  throw Impossible(s"found $other instead of ConstantType")
+                  throw Mistake(s"found $other instead of ConstantType")
             
               (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
                   Text(parts.head)), positions.head), typeclass)
@@ -83,7 +83,7 @@ trait Interpolator[Input, State, Result]:
                   positions.head), typeclass)
             
             case _ =>
-              throw Impossible("this case should never match")
+              throw Mistake("this case should never match")
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               Text(${Expr(parts.head)}))}
@@ -105,10 +105,10 @@ trait Interpolator[Input, State, Result]:
           case '{ (${sc}: StringContext.type).apply(($parts: Seq[String])*) } =>
             parts match
               case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
-              case _                    => throw Impossible("expected Varargs")
+              case _                    => throw Mistake("expected Varargs")
           
           case _ =>
-            throw Impossible("expected expression of the form `StringContext.apply(args)`")
+            throw Mistake("expected expression of the form `StringContext.apply(args)`")
         
         try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
             positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
