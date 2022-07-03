@@ -21,8 +21,8 @@ import scala.compiletime.*
 
 import rudiments.*
 
-case class InterpolationError(message: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-extends Error((Text("$message at "), offset, Text("-"), length))
+case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
+extends Error((error, Text(" at "), offset, Text("-"), length))
 
 trait Interpolator[Input, State, Result]:
 
@@ -51,7 +51,7 @@ trait Interpolator[Input, State, Result]:
             throw PositionalError(msg, shift(pos, offset.otherwise(0),
                 length.otherwise(pos.end - pos.start - offset.otherwise(0))))
 
-    case class PositionalError(message: Text, position: Position) extends Error(EmptyTuple)
+    case class PositionalError(error: Text, position: Position) extends Error(EmptyTuple)
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
                   expr: Expr[State]): Expr[Result] =
@@ -114,12 +114,12 @@ trait Interpolator[Input, State, Result]:
             positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
         catch
           case err: PositionalError => err match
-            case PositionalError(message, pos) =>
-              report.errorAndAbort(s"contextual: $message", pos)
+            case PositionalError(error, pos) =>
+              report.errorAndAbort(s"contextual: $error", pos)
 
           case err: InterpolationError => err match
-            case InterpolationError(message, _, _) =>
-              report.errorAndAbort(s"contextual: $message", Position.ofMacroExpansion)
+            case InterpolationError(error, _, _) =>
+              report.errorAndAbort(s"contextual: $error", Position.ofMacroExpansion)
       
       case _ =>
         report.errorAndAbort("contextual: expected varargs")
