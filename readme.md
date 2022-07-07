@@ -283,7 +283,7 @@ Contextual is classified as __maturescent__. Propensive defines the following fi
 - _dependable_: production-ready, subject to controlled ongoing maintenance and enhancement; tagged as version `1.0` or later
 - _adamantine_: proven, reliable and production-ready, with no further breaking changes ever anticipated
 
-Contextual is designed to be _small_. Its entire source code currently consists of 91 lines of code.
+Contextual is designed to be _small_. Its entire source code currently consists of 92 lines of code.
 
 ## Building
 
