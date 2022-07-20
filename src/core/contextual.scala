@@ -22,10 +22,10 @@ import scala.compiletime.*
 import rudiments.*
 
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-extends Error((error, Text(" at "), offset, Text("-"), length))
+                             (using Codepoint)
+extends Error(err"$error at $offset-$length")(pos)
 
 trait Interpolator[Input, State, Result]:
-
   given CanThrow[InterpolationError] = compiletime.erasedValue
 
   protected def initial: State
@@ -35,9 +35,9 @@ trait Interpolator[Input, State, Result]:
   protected def insert(state: State, value: Input): State
   protected def complete(value: State): Result
 
-  def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext],
-                 seq: Expr[Seq[Any]])
-            (using Quotes, Type[Input], Type[State], Type[Result]): Expr[Result] =
+  def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext], seq: Expr[Seq[Any]])
+            (using Quotes, Type[Input], Type[State], Type[Result])
+            : Expr[Result] =
     import quotes.reflect.*
 
     def shift(pos: Position, offset: Int, length: Int): Position =
@@ -51,13 +51,13 @@ trait Interpolator[Input, State, Result]:
             throw PositionalError(msg, shift(pos, offset.otherwise(0),
                 length.otherwise(pos.end - pos.start - offset.otherwise(0))))
 
-    case class PositionalError(error: Text, position: Position) extends Error(EmptyTuple)
+    case class PositionalError(error: Text, position: Position)(using Codepoint)
+    extends Error(err"error $error at position $position")(pos)
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
                   expr: Expr[State]): Expr[Result] =
       seq match
         case '{ $head: h } +: tail =>
-
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[h].widen.show
             
@@ -92,6 +92,7 @@ trait Interpolator[Input, State, Result]:
         
         case _ =>
           rethrow(complete(state), Position.ofMacroExpansion)
+          
           '{$target.complete($expr)}
     
     seq match
