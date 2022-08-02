@@ -22,8 +22,7 @@ import scala.compiletime.*
 import rudiments.*
 
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-                             (using Codepoint)
-extends Error(err"$error at $offset-$length")(pos)
+extends Error(err"$error at $offset-$length")
 
 trait Interpolator[Input, State, Result]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
@@ -51,8 +50,8 @@ trait Interpolator[Input, State, Result]:
             throw PositionalError(msg, shift(pos, offset.otherwise(0),
                 length.otherwise(pos.end - pos.start - offset.otherwise(0))))
 
-    case class PositionalError(error: Text, position: Position)(using Codepoint)
-    extends Error(err"error $error at position $position")(pos)
+    case class PositionalError(error: Text, position: Position)
+    extends Error(err"error $error at position $position")
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
                   expr: Expr[State]): Expr[Result] =
