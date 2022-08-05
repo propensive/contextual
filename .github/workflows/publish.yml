@@ -1,0 +1,47 @@
+name: Publish
+on:
+  push:
+    tags:
+      - 'pending/*'
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+      with:
+        submodules: recursive
+        fetch-depth: 0
+    - name: Setup Java 11
+      uses: actions/setup-java@v2
+      with:
+        distribution: 'temurin'
+        java-version: '11'
+    - name: Fetch tags
+      run: git fetch --depth=1 origin +refs/tags/*:refs/tags/*
+    - name: Get Version
+      id: tagName
+      run: echo ::set-output name=version::${GITHUB_REF#refs/tags/pending/}
+    - name: 'Abort if tag exists'
+      id: checkTagged
+      shell: bash
+      run: git show-ref --tags --verify --quiet -- "refs/tags/release/${{ steps.tagName.outputs.version }}" && exit 1 || exit 0
+    - name: Publish
+      run: echo Publishing
+    - name: Tag release
+      uses: actions/github-script@v6
+      with:
+        github-token: ${{ secrets.RELEASE_TOKEN }}
+        script: |
+          let newRef = context.ref.replace('pending', 'release');
+          github.rest.git.createRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: newRef,
+            sha: context.sha
+          });
+          github.rest.git.deleteRef({
+            owner: context.repo.owner,
+            repo: context.repo.repo,
+            ref: context.ref.substring(5)
+          });
