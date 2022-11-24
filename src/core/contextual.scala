@@ -47,8 +47,8 @@ trait Interpolator[Input, State, Result]:
       try blk catch case err: InterpolationError =>
         err match
           case InterpolationError(msg, offset, length) =>
-            throw PositionalError(msg, shift(pos, offset.otherwise(0),
-                length.otherwise(pos.end - pos.start - offset.otherwise(0))))
+            throw PositionalError(msg, shift(pos, offset.or(0),
+                length.or(pos.end - pos.start - offset.or(0))))
 
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
