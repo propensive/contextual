@@ -271,7 +271,7 @@ The following _Scala One_ libraries are dependencies of _Contextual_:
 
 The following _Scala One_ libraries are dependents of _Contextual_:
 
-[![Gossamer](https://github.com/propensive/gossamer/raw/main/doc/images/128x128.png)](https://github.com/propensive/gossamer/) &nbsp;
+[![Gossamer](https://github.com/propensive/gossamer/raw/main/doc/images/128x128.png)](https://github.com/propensive/gossamer/) &nbsp; [![Iridescence](https://github.com/propensive/iridescence/raw/main/doc/images/128x128.png)](https://github.com/propensive/iridescence/) &nbsp;
 
 ## Status
 
@@ -283,7 +283,7 @@ Contextual is classified as __maturescent__. Propensive defines the following fi
 - _dependable_: production-ready, subject to controlled ongoing maintenance and enhancement; tagged as version `1.0` or later
 - _adamantine_: proven, reliable and production-ready, with no further breaking changes ever anticipated
 
-Contextual is designed to be _small_. Its entire source code currently consists of 92 lines of code.
+Contextual is designed to be _small_. Its entire source code currently consists of 93 lines of code.
 
 ## Building
 
@@ -321,5 +321,5 @@ Contextual takes its name from its ability to provide context-aware substitution
 
 ## License
 
-Contextual is copyright &copy; 2016-22 Jon Pretty & Propensive O&Uuml;, and is made available under the
+Contextual is copyright &copy; 2016-23 Jon Pretty & Propensive O&Uuml;, and is made available under the
 [Apache 2.0 License](/license.md).
