@@ -47,8 +47,7 @@ trait Interpolator[Input, State, Result]:
       try blk catch case err: InterpolationError =>
         err match
           case InterpolationError(msg, offset, length) =>
-            throw PositionalError(msg, shift(pos, offset.or(0),
-                length.or(pos.end - pos.start - offset.or(0))))
+            throw PositionalError(msg, shift(pos, offset.or(0), length.or(pos.end - pos.start - offset.or(0))))
 
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
@@ -60,10 +59,8 @@ trait Interpolator[Input, State, Result]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[h].widen.show
             
-            report.errorAndAbort(
-              s"contextual: can't substitute $typeName into this interpolated string",
-              head.asTerm.pos
-            )
+            report.errorAndAbort(s"contextual: can't substitute $typeName into this interpolated string",
+                head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold(notFound):
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
@@ -84,8 +81,7 @@ trait Interpolator[Input, State, Result]:
             case _ =>
               throw Mistake("this case should never match")
 
-          val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
-              Text(${Expr(parts.head)}))}
+          val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)), Text(${Expr(parts.head)}))}
 
           recur(tail, parts.tail, positions.tail, newState, next)
         
