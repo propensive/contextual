@@ -65,18 +65,15 @@ trait Interpolator[Input, State, Result]:
           val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold(notFound):
             case '{ $typeclass: Substitution[Input, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
-                case ConstantType(StringConstant(string)) =>
-                  string
-                
-                case other =>
-                  throw Mistake(s"found $other instead of ConstantType")
+                case ConstantType(StringConstant(string)) => string
+                case other                                => throw Mistake(s"unexpected type: $other")
             
-              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
-                  Text(parts.head)), positions.head), typeclass)
+              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos), Text(parts.head)),
+                  positions.head), typeclass)
           
             case '{ $typeclass: eType } =>
-              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
-                  positions.head), typeclass)
+              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)), positions.head),
+                  typeclass)
             
             case _ =>
               throw Mistake("this case should never match")
@@ -87,7 +84,6 @@ trait Interpolator[Input, State, Result]:
         
         case _ =>
           rethrow(complete(state), Position.ofMacroExpansion)
-          
           '{$target.complete($expr)}
     
     seq match
@@ -98,16 +94,15 @@ trait Interpolator[Input, State, Result]:
         .parts
         
         val positions: Seq[Position] = ctx match
-          case '{ (${sc}: StringContext.type).apply(($parts: Seq[String])*) } =>
-            parts match
-              case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
-              case _                    => throw Mistake("expected Varargs")
+          case '{ (${sc}: StringContext.type).apply(($parts: Seq[String])*) } => parts match
+            case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
+            case _                    => throw Mistake("expected Varargs")
           
           case _ =>
             throw Mistake("expected expression of the form `StringContext.apply(args)`")
         
-        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
-            positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
+        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)), positions.head),
+            '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
         catch
           case err: PositionalError => err match
             case PositionalError(error, pos) =>
