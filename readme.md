@@ -98,20 +98,20 @@ Here are the signatures for each method in the `Interpolator` type:
 ```scala
 trait Interpolator[Input, State, Result]:
   def initial: State
-  def parse(state: State, next: String): State
+  def parse(state: State, next: Text): State
   def insert(state: State, value: Input): State
   def skip(state: State): State
   def complete(value: State): Return
 ```
 
 Three abstract types are used in their definitions: `State` represents the information passed from
-one method to the next, and could be as simple as `Unit` or `String`, or could be some complex
-document structure. `Input` is a type chosen to represent the types of all substitutions. `String`
+one method to the next, and could be as simple as `Unit` or `Text`, or could be some complex
+document structure. `Input` is a type chosen to represent the types of all substitutions. `Text`
 would be a common choice for this, but there may be utility in using richer types, too. And `Return`
 is the type that the interpolated string will ultimately evaluate to.
 
 In addition to `parse`, `insert`, `skip` and `complete` taking `State` instances as input, note that
-`parse` always takes a `String`, and `insert` takes an `Input`.
+`parse` always takes a `Text`, and `insert` takes an `Input`.
 
 Any of the methods may throw an `InterpolationError` exception, with a message. At compiletime,
 these will be caught, and turned into compile errors. Additionally, a range of characters may be
@@ -189,31 +189,31 @@ This means that the set of types which may be inserted into an interpolated stri
 ad-hoc. There is only the requirement that any inserted type, `T`, may be converted to an `I`, since
 `I` is a type known to the `Interpolator` implementation.
 
-So, if an interpolator's general `Input` type is `List[String]`, and we wanted to permit insertions
-of `List[String]`, `String` and `Int`, then three given instances would be necessary:
+So, if an interpolator's general `Input` type is `List[Text]`, and we wanted to permit insertions
+of `List[Text]`, `Text` and `Int`, then three given instances would be necessary:
 
 ```scala
-given Insertion[List[String], String] = List(_)
-given Insertion[List[String], List[String]] = identity(_)
-given Insertion[List[String], Int] = int => List(int.toString)
+given Insertion[List[Text], Text] = List(_)
+given Insertion[List[Text], List[Text]] = identity(_)
+given Insertion[List[Text], Int] = int => List(int.show)
 ```
 
 ## Substitutions
 
 A `Substitution` is a typeclass that's almost identical to `Insertion` (and is, indeed, a subtype of
-`Insertion`), but takes an additional type parameter: a singleton `String` literal. The behavior of
+`Insertion`), but takes an additional type parameter: a singleton `Text` literal. The behavior of
 a given `Substitution` will be identical to a given `Insertion` at runtime, but differs at
 compiletime:
 
 During macro expansion, instead of invoking `skip`, the `substitute` method will be called instead,
-passing it the `String` value taken from the additional type parameter to `Substitution`.
+passing it the `Text` value taken from the additional type parameter to `Substitution`.
 
 For example the given definitions,
 ```scala
-given Substitution[XInput, String, "\"\""] = str => StrInput(str)
+given Substitution[XInput, Text, "\"\""] = str => StrInput(str)
 given Substitution[XInput, Int, "0"] = int => IntInput(int)
 ```
-would mean that an `Int`, `int`, and a `String`, `str`, substituted into an interpolated string
+would mean that an `Int`, `int`, and a `Text`, `str`, substituted into an interpolated string
 would result in invocations of, `substitute(state, "0")` and `substitute(state, "\"\"")`
 respectively.
 
@@ -232,19 +232,19 @@ basis of the singleton `String` literal included in the given's signature. This 
 Here is a trivial interpolator which can parse, for example, `hex"a948b0${x}710bff"`, and return an
 `IArray[Byte]`:
 ```scala
-object Hex extends Interpolator[Long, String, IArray[Byte]]:
-  def initial: String = ""
+object Hex extends Interpolator[Long, Text, IArray[Byte]]:
+  def initial: Text = t""
 
-  def parse(state: String, next: String): String =
+  def parse(state: Text, next: Text): Text =
     if next.forall(hexChar(_)) then state+next
     else throw InterpolationError("not a valid hexadecimal character")
   
-  def insert(state: String, value: Option[Long]): String =
+  def insert(state: Text, value: Option[Long]): Text =
     value match
-      case None       => state+"0"
-      case Some(long) => state+long.toHexString
+      case None       => t"${state}0"
+      case Some(long) => t${state}${long.toHexString}"
   
-  def complete(state: String): IArray[Byte] =
+  def complete(state: Text): IArray[Byte] =
     IArray.from(convertStringToByteArray(state))
   
   private def hexChar(ch: Char): Boolean =
