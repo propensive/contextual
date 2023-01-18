@@ -1,4 +1,4 @@
-## About Interpolators
+### About Interpolators
 
 An interpolated string is any string literal prefixed with an alphanumeric string, such as
 `s"Hello World"` or `date"15 April, 2016"`. Unlike ordinary string literals, interpolated strings
@@ -21,7 +21,7 @@ identify coding errors _before_ runtime.
 
 Contextual makes it easy to write such interpolators.
 
-## Contextual's `Interpolator` type
+### Contextual's `Interpolator` type
 
 An interpolated string may have no substitutions, or it may include many substitutions, with a
 string of zero or more characters between at the start, end, and between each adjacent pair.
@@ -109,7 +109,7 @@ complete(parse(insert(parse(insert(parse(initial, "https://example.com/"), Some(
     "/images/"), Some(img)), ""))
 ```
 
-## Compile Errors
+### Compile Errors
 
 Throwing exceptions provides the flexibility to raise a compilation error just by examining the
 `state` value and/or the other inputs.
@@ -134,7 +134,7 @@ during the first invocation of `parse`, and the Scala compiler would highlight `
 location: in this example, `15` is the offset from the start of this part of the string to the
 error location, and `4` is the length of the error.
 
-## Binding an interpolator
+### Binding an interpolator
 
 A small amount of boilerplate is needed to bind an `Interpolator` object, for example `Abc`, to a
 prefix, i.e. the letters `abc` in the interpolated string, `abc""`:
@@ -153,7 +153,7 @@ In particular, the type of `parts`, `Any*`, should be left unchanged. This does 
 type may be substituted into an interpolated string; Contextual provides another way to constrain
 the set of acceptable types for insertions.
 
-## Insertions
+### Insertions
 
 Contextual uses a typeclass interface to support insertions of different types. An insertion of a
 particular type, `T`, into an interpolator taking a value of type `I` requires a corresponding
@@ -172,7 +172,7 @@ given Insertion[List[Text], List[Text]] = identity(_)
 given Insertion[List[Text], Int] = int => List(int.show)
 ```
 
-## Substitutions
+### Substitutions
 
 A `Substitution` is a typeclass that's almost identical to `Insertion` (and is, indeed, a subtype of
 `Insertion`), but takes an additional type parameter: a singleton `Text` literal. The behavior of
@@ -201,7 +201,7 @@ interpolated string may be dependent on the types inserted, distinguishing betwe
 basis of the singleton `String` literal included in the given's signature. This compares to the
 `skip` method which offers no more information about a substitution than its existence.
 
-## A First Interpolator
+### A First Interpolator
 
 Here is a trivial interpolator which can parse, for example, `hex"a948b0${x}710bff"`, and return an
 `IArray[Byte]`:
