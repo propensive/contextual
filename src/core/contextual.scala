@@ -24,6 +24,14 @@ import rudiments.*
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(err"$error at $offset-$length")
 
+trait Verifier[Result] extends Interpolator[Nothing, Maybe[Result], Result]:
+  def verify(text: Text): Result
+  protected def initial: Maybe[Result] = Unset
+  protected def parse(state: Maybe[Result], next: Text): Maybe[Result] = verify(next)
+  protected def skip(state: Maybe[Result]): Maybe[Result] = state
+  protected def insert(state: Maybe[Result], value: Nothing): Maybe[Result] = state
+  protected def complete(value: Maybe[Result]): Result = value.or(throw Mistake("should be impossible"))
+
 trait Interpolator[Input, State, Result]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
 
