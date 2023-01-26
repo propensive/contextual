@@ -302,7 +302,7 @@ Note that this should be defined in a different source file from the object `Hex
 
 The following _Scala One_ libraries are dependencies of _Contextual_:
 
-[![Rudiments](https://github.com/propensive/rudiments/raw/main/doc/images/128x128.png)](https://github.com/propensive/rudiments/) &nbsp;
+[![Deviation](https://github.com/propensive/deviation/raw/main/doc/images/128x128.png)](https://github.com/propensive/deviation/) &nbsp;
 
 The following _Scala One_ libraries are dependents of _Contextual_:
 
@@ -324,7 +324,7 @@ be used, but caution should be taken if there is a mismatch between the
 project's stability level and the importance of your own project.
 
 Contextual is designed to be _small_. Its entire source code currently consists
-of 95 lines of code.
+of 96 lines of code.
 
 ## Building
 
