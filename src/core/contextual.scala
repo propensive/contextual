@@ -31,6 +31,9 @@ trait Verifier[Result] extends Interpolator[Nothing, Maybe[Result], Result]:
   protected def skip(state: Maybe[Result]): Maybe[Result] = state
   protected def insert(state: Maybe[Result], value: Nothing): Maybe[Result] = state
   protected def complete(value: Maybe[Result]): Result = value.or(throw Mistake("should be impossible"))
+  
+  def expand(target: Expr[Verifier[Result]], ctx: Expr[StringContext])(using Quotes, Type[Result])
+            : Expr[Result] = expand(target, ctx, Expr.ofSeq(Nil))
 
 trait Interpolator[Input, State, Result]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
