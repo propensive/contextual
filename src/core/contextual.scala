@@ -20,6 +20,7 @@ import scala.quoted.*
 import scala.compiletime.*
 
 import rudiments.*
+import deviation.*
 
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(err"$error at $offset-$length")

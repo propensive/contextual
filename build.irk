@@ -1,12 +1,12 @@
 {
   "repos": [
     {
-      "base": "../rudiments",
-      "url": "https://github.com/propensive/rudiments"
+      "base": "../deviation",
+      "url": "https://github.com/propensive/deviation"
     }
   ],
   "imports": [
-    "../rudiments/build.irk"
+    "../deviation/build.irk"
   ],
   "publishing": {
     "username": "propensive",
@@ -31,7 +31,7 @@
       "name": "Contextual",
       "id": "contextual/core",
       "links": [
-        "rudiments/core"
+        "deviation/core"
       ],
       "sources": [
         "src/core"
