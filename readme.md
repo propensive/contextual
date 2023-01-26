@@ -47,7 +47,7 @@ identify coding errors _before_ runtime.
 
 Contextual makes it easy to write such interpolators.
 
-### Contextual's `Interpolator` type
+### Contextual's `Verifier` type
 
 An interpolated string may have no substitutions, or it may include many substitutions, with a
 string of zero or more characters between at the start, end, and between each adjacent pair.
@@ -56,9 +56,45 @@ So in general, any interpolated string can be represented as _n_ string literals
 known at compiletime, and _n - 1_ variables (of various types), whose values are not known until
 runtime.
 
-Contextual's `Interpolator` interface provides a set of five abstract methods—`initial`, `parse`,
-`insert`, `skip` and `complete`—which are invoked, in a particular order, once at compiletime,
-_without_ the substituted values (since they are not known!), and again at runtime, _with_ the
+Contextual provides a simple `Verifier` interface for the simplest interpolated
+strings—those which do not allow any substitutions.
+
+A new verifier needs just a a type parameter for the return type of the
+verifier, and a single method, `verify`, for example, a binary reader:
+```scala
+import contextual.*
+object Binary extends Verifier[IArray[Byte]]:
+  def verify(content: Text): IArray[Byte] =
+    // read content as 0s and 1s and produce an IArray[Byte]
+```
+or even, using single-abstract-method syntax,
+```scala
+import contextual.*
+val Binary: Verifier[IArray[Byte]] = convert => // conversion
+```
+
+This defines the verifier, but has not yet bound it to a prefix, such as `bin`.
+To achieve this, we need to provide an extension method on `StringContext`,
+like so:
+```scala
+extension (inline ctx: StringContext)
+  inline def bin(): IArray[Byte] = ${Binary.expand('Binary, 'ctx)}
+```
+
+Note that this definition must appear in a separate source file from the definition of the verifier.
+
+This simple definition makes it possible to write an expression such as
+`bin"0011001011101100"`, and have it produce a byte array.
+
+#### More advanced interpolation
+
+For string interpolations which support substitutions of runtime values into
+the string, Contextual provides the `Interpolator` type.
+
+Contextual's `Interpolator` interface provides a set of five abstract
+methods—`initial`, `parse`, `insert`, `skip` and `complete`—which are invoked,
+in a particular order, once at compiletime, _without_ the substituted values
+(since they are not known when it runs!), and again at runtime, _with_ the
 substituted values (when they are known).
 
 The method `skip` is used at compiletime, and `insert` at runtime.
@@ -288,7 +324,7 @@ be used, but caution should be taken if there is a mismatch between the
 project's stability level and the importance of your own project.
 
 Contextual is designed to be _small_. Its entire source code currently consists
-of 86 lines of code.
+of 95 lines of code.
 
 ## Building
 
