@@ -54,8 +54,7 @@ trait Interpolator[Input, State, Result]:
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
-    def rethrow[T](blk: => T, pos: Position): T =
-      import unsafeExceptions.canThrowAny
+    def rethrow[T](blk: => T, pos: Position): T throws PositionalError =
       try blk catch case err: InterpolationError =>
         err match
           case InterpolationError(msg, offset, length) =>
@@ -65,7 +64,7 @@ trait Interpolator[Input, State, Result]:
     extends Error(err"error $error at position $position")
     
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
-                  expr: Expr[State]): Expr[Result] =
+                  expr: Expr[State]): Expr[Result] throws PositionalError =
       seq match
         case '{ $head: h } +: tail =>
           def notFound: Nothing =
