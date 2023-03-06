@@ -1,5 +1,8 @@
 [contextual]
+target = contextual/core
+repos = propensive/deviation
 
 [contextual/core]
+src = src/core
 refs = deviation/core
 
