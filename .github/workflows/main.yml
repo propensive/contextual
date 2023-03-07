@@ -12,10 +12,16 @@ jobs:
       uses: actions/checkout@v2
       with:
         submodules: recursive
-    - name: Setup Java 11
+    - name: Setup Java 19
       uses: actions/setup-java@v2
       with:
         distribution: 'temurin'
-        java-version: '11'
+        java-version: '19'
+    - name: Get Wrath
+      uses: actions/checkout@v2
+      with:
+        repository: 'propensive/wrath'
+        path: 'wrath'
+        ref: '0.2.7'
     - name: Build
-      run: ./irk
+      run: "wrath/wrath -F"
