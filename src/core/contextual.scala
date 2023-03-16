@@ -25,30 +25,32 @@ import deviation.*
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(err"$error at $offset-$length")
 
-trait Verifier[Result] extends Interpolator[Nothing, Maybe[Result], Result]:
-  def verify(text: Text): Result
-  protected def initial: Maybe[Result] = Unset
-  protected def parse(state: Maybe[Result], next: Text): Maybe[Result] = verify(next)
-  protected def skip(state: Maybe[Result]): Maybe[Result] = state
-  protected def insert(state: Maybe[Result], value: Nothing): Maybe[Result] = state
-  protected def complete(value: Maybe[Result]): Result = value.or(throw Mistake("should be impossible"))
+trait Verifier[ResultType]
+extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
+  def verify(text: Text): ResultType
+  protected def initial: Maybe[ResultType] = Unset
+  protected def parse(state: Maybe[ResultType], next: Text): Maybe[ResultType] = verify(next)
+  protected def skip(state: Maybe[ResultType]): Maybe[ResultType] = state
+  protected def insert(state: Maybe[ResultType], value: Nothing): Maybe[ResultType] = state
+  protected def complete(value: Maybe[ResultType]): ResultType = value.or(throw Mistake("should be impossible"))
   
-  def expand(target: Expr[Verifier[Result]], ctx: Expr[StringContext])(using Quotes, Type[Result])
-            : Expr[Result] = expand(target, ctx, Expr.ofSeq(Nil))
+  def expand
+      (target: Expr[Verifier[ResultType]], ctx: Expr[StringContext])(using Quotes, Type[ResultType])
+      : Expr[ResultType] = expand(target, ctx, Expr.ofSeq(Nil))
 
-trait Interpolator[Input, State, Result]:
+trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
 
-  protected def initial: State
-  protected def parse(state: State, next: Text): State
-  protected def skip(state: State): State
-  protected def substitute(state: State, value: Text): State = parse(state, value)
-  protected def insert(state: State, value: Input): State
-  protected def complete(value: State): Result
+  protected def initial: StateType
+  protected def parse(state: StateType, next: Text): StateType
+  protected def skip(state: StateType): StateType
+  protected def substitute(state: StateType, value: Text): StateType = parse(state, value)
+  protected def insert(state: StateType, value: InputType): StateType
+  protected def complete(value: StateType): ResultType
 
-  def expand(target: Expr[Interpolator[Input, State, Result]], ctx: Expr[StringContext], seq: Expr[Seq[Any]])
-            (using Quotes, Type[Input], Type[State], Type[Result])
-            : Expr[Result] =
+  def expand(target: Expr[Interpolator[InputType, StateType, ResultType]], ctx: Expr[StringContext], seq: Expr[Seq[Any]])
+            (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
+            : Expr[ResultType] =
     import quotes.reflect.*
 
     def shift(pos: Position, offset: Int, length: Int): Position =
@@ -63,8 +65,8 @@ trait Interpolator[Input, State, Result]:
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
     
-    def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: State,
-                  expr: Expr[State]): Expr[Result] throws PositionalError =
+    def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
+                  expr: Expr[StateType]): Expr[ResultType] throws PositionalError =
       seq match
         case '{ $head: h } +: tail =>
           def notFound: Nothing =
@@ -73,8 +75,8 @@ trait Interpolator[Input, State, Result]:
             report.errorAndAbort(s"contextual: can't substitute $typeName into this interpolated string",
                 head.asTerm.pos)
 
-          val (newState, typeclass) = Expr.summon[Insertion[Input, h]].fold(notFound):
-            case '{ $typeclass: Substitution[Input, `h`, sub] } =>
+          val (newState, typeclass) = Expr.summon[Insertion[InputType, h]].fold(notFound):
+            case '{ $typeclass: Substitution[InputType, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
                 case ConstantType(StringConstant(string)) => string
                 case other                                => throw Mistake(s"unexpected type: $other")
@@ -126,7 +128,7 @@ trait Interpolator[Input, State, Result]:
       case _ =>
         report.errorAndAbort("contextual: expected varargs")
 
-trait Insertion[Input, -T]:
-  def embed(value: T): Input
+trait Insertion[InputType, -T]:
+  def embed(value: T): InputType
 
-trait Substitution[Input, -T, S <: String & Singleton] extends Insertion[Input, T]
+trait Substitution[InputType, -T, S <: String & Singleton] extends Insertion[InputType, T]
