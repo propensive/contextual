@@ -1,9 +1,0 @@
-# This is a Wrath buildfile. More information is available at: https://github.com/propensive/wrath/
-[contextual]
-target = contextual/core
-repos = propensive/deviation
-
-[contextual/core]
-src = src/core
-refs = deviation/core
-

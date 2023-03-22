@@ -1,0 +1,12 @@
+# This is a buildfile for Fury or Wrath.
+# More information is available at: https://github.com/propensive/wrath/
+
+repo propensive/deviation
+
+target contextual/core
+
+project contextual
+  module core
+    sources src/core
+    include deviation/core
+
