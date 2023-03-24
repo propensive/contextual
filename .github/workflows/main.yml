@@ -12,11 +12,11 @@ jobs:
       uses: actions/checkout@v3
       with:
         submodules: recursive
-    - name: Setup Java 19
+    - name: Setup Java 20
       uses: actions/setup-java@v3
       with:
         distribution: 'temurin'
-        java-version: '19'
+        java-version: '20'
     - name: Get Wrath
       uses: actions/checkout@v3
       with:
