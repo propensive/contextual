@@ -32,7 +32,8 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
   protected def parse(state: Maybe[ResultType], next: Text): Maybe[ResultType] = verify(next)
   protected def skip(state: Maybe[ResultType]): Maybe[ResultType] = state
   protected def insert(state: Maybe[ResultType], value: Nothing): Maybe[ResultType] = state
-  protected def complete(value: Maybe[ResultType]): ResultType = value.or(throw Mistake("should be impossible"))
+  protected def complete(value: Maybe[ResultType]): ResultType =
+    value.or(throw Mistake("should be impossible"))
   
   def expand
       (target: Expr[Verifier[ResultType]], ctx: Expr[StringContext])(using Quotes, Type[ResultType])
@@ -48,9 +49,11 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def insert(state: StateType, value: InputType): StateType
   protected def complete(value: StateType): ResultType
 
-  def expand(target: Expr[Interpolator[InputType, StateType, ResultType]], ctx: Expr[StringContext], seq: Expr[Seq[Any]])
-            (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
-            : Expr[ResultType] =
+  def expand
+      (target: Expr[Interpolator[InputType, StateType, ResultType]], ctx: Expr[StringContext],
+          seq: Expr[Seq[Any]])
+      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
+      : Expr[ResultType] =
     import quotes.reflect.*
 
     def shift(pos: Position, offset: Int, length: Int): Position =
@@ -60,7 +63,8 @@ trait Interpolator[InputType, StateType, ResultType]:
       try blk catch case err: InterpolationError =>
         err match
           case InterpolationError(msg, offset, length) =>
-            throw PositionalError(msg, shift(pos, offset.or(0), length.or(pos.end - pos.start - offset.or(0))))
+            throw PositionalError(msg, shift(pos, offset.or(0), length.or(pos.end - pos.start -
+                offset.or(0))))
 
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
@@ -72,26 +76,29 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[h].widen.show
             
-            report.errorAndAbort(s"contextual: can't substitute $typeName into this interpolated string",
-                head.asTerm.pos)
+            fail(s"can't substitute $typeName into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, h]].fold(notFound):
             case '{ $typeclass: Substitution[InputType, `h`, sub] } =>
               val substitution: String = TypeRepr.of[sub] match
-                case ConstantType(StringConstant(string)) => string
-                case other                                => throw Mistake(s"unexpected type: $other")
+                case ConstantType(StringConstant(string)) =>
+                  string
+                
+                case other =>
+                  throw Mistake(s"unexpected type: $other")
             
-              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos), Text(parts.head)),
-                  positions.head), typeclass)
+              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
+                  Text(parts.head)), positions.head), typeclass)
           
             case '{ $typeclass: eType } =>
-              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)), positions.head),
-                  typeclass)
+              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
+                  positions.head), typeclass)
             
             case _ =>
               throw Mistake("this case should never match")
 
-          val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)), Text(${Expr(parts.head)}))}
+          val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
+              Text(${Expr(parts.head)}))}
 
           recur(tail, parts.tail, positions.tail, newState, next)
         
@@ -102,8 +109,7 @@ trait Interpolator[InputType, StateType, ResultType]:
     seq match
       case Varargs(exprs) =>
         val parts = ctx.value.getOrElse:
-          report.errorAndAbort(s"contextual: the StringContext extension method parameter does "+
-                                     "not appear to be inline")
+          fail(s"the StringContext extension method parameter does not appear to be inline")
         .parts
         
         val positions: Seq[Position] = ctx match
@@ -114,19 +120,17 @@ trait Interpolator[InputType, StateType, ResultType]:
           case _ =>
             throw Mistake("expected expression of the form `StringContext.apply(args)`")
         
-        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)), positions.head),
-            '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
+        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
+            positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
         catch
           case err: PositionalError => err match
-            case PositionalError(error, pos) =>
-              report.errorAndAbort(s"contextual: $error", pos)
+            case PositionalError(error, pos) => fail(s"$error", pos)
 
           case err: InterpolationError => err match
-            case InterpolationError(error, _, _) =>
-              report.errorAndAbort(s"contextual: $error", Position.ofMacroExpansion)
+            case InterpolationError(error, _, _) => fail(s"$error", Position.ofMacroExpansion)
       
       case _ =>
-        report.errorAndAbort("contextual: expected varargs")
+        fail("expected varargs")
 
 trait Insertion[InputType, -T]:
   def embed(value: T): InputType
