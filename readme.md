@@ -4,6 +4,8 @@
 
 # Contextual
 
+__Statically-checked string interpolation__
+
 __Contextual__ makes it simple to write typesafe, statically-checked interpolated strings.
 
 Contextual is a Scala library which allows you to define your own string interpolators—prefixes for
@@ -20,7 +22,8 @@ at compiletime and interpreted at runtime, writing very ordinary user code with 
 
 ## Availability
 
-Contextual has not yet been published as a binary, though work is ongoing to fix this.
+Contextual has not yet been published as a binary. It is currently waiting for the
+final release of Scala 3.3.
 
 ## Getting Started
 
@@ -298,15 +301,6 @@ Note that this should be defined in a different source file from the object `Hex
 
 
 
-## Related Projects
-
-The following _Scala One_ libraries are dependencies of _Contextual_:
-
-[![Deviation](https://github.com/propensive/deviation/raw/main/doc/images/128x128.png)](https://github.com/propensive/deviation/) &nbsp;
-
-The following _Scala One_ libraries are dependents of _Contextual_:
-
-[![Gossamer](https://github.com/propensive/gossamer/raw/main/doc/images/128x128.png)](https://github.com/propensive/gossamer/) &nbsp; [![Iridescence](https://github.com/propensive/iridescence/raw/main/doc/images/128x128.png)](https://github.com/propensive/iridescence/) &nbsp;
 
 ## Status
 
@@ -316,7 +310,7 @@ categorized into one of the following five stability levels:
 - _embryonic_: for experimental or demonstrative purposes only, without any guarantees of longevity
 - _fledgling_: of proven utility, seeking contributions, but liable to significant redesigns
 - _maturescent_: major design decisions broady settled, seeking probatory adoption and refinement
-- _dependable_: production-ready, subject to controlled ongoing maintenance and enhancement; tagged as version `1.0` or later
+- _dependable_: production-ready, subject to controlled ongoing maintenance and enhancement; tagged as version `1.0.0` or later
 - _adamantine_: proven, reliable and production-ready, with no further breaking changes ever anticipated
 
 Projects at any stability level, even _embryonic_ projects, are still ready to
@@ -324,7 +318,7 @@ be used, but caution should be taken if there is a mismatch between the
 project's stability level and the importance of your own project.
 
 Contextual is designed to be _small_. Its entire source code currently consists
-of 95 lines of code.
+of 100 lines of code.
 
 ## Building
 
@@ -356,7 +350,16 @@ Contextual was designed and developed by Jon Pretty, and commercial support and 
 
 Contextual takes its name from its ability to provide context-aware substitutions in interpolated strings.
 
+In general, Scala One project names are always chosen with some rationale, however it is usually
+frivolous. Each name is chosen for more for its _uniqueness_ and _intrigue_ than its concision or
+catchiness, and there is no bias towards names with positive or "nice" meanings—since many of the
+libraries perform some quite unpleasant tasks.
+
+Names should be English words, though many are obscure or archaic, and it should be noted how
+willingly English adopts foreign words. Names are generally of Greek or Latin origin, and have
+often arrived in English via a romance language.
+
 ## License
 
-Contextual is copyright &copy; 2016-23 Jon Pretty & Propensive O&Uuml;, and is made available under the
+Contextual is copyright &copy; 2023 Jon Pretty & Propensive O&Uuml;, and is made available under the
 [Apache 2.0 License](/license.md).
