@@ -52,7 +52,7 @@ To achieve this, we need to provide an extension method on `StringContext`,
 like so:
 ```scala
 extension (inline ctx: StringContext)
-  inline def bin(): IArray[Byte] = ${Binary.expand('Binary, 'ctx)}
+  inline def bin(): IArray[Byte] = ${Binary.expand('ctx)}
 ```
 
 Note that this definition must appear in a separate source file from the definition of the verifier.
@@ -177,13 +177,13 @@ prefix, i.e. the letters `abc` in the interpolated string, `abc""`:
 ```scala
 extension (inline ctx: StringContext)
   transparent inline def abc(inline parts: Any*): Return =
-    ${Abc.expand('Abc, 'ctx, 'parts)}
+    ${Abc.expand('ctx, 'parts)}
 ```
 
 This boilerplate should be modified as follows:
  - the method name, `abc`, should change to the desired prefix,
  - the method's return type, `Return`, should be changed to the return type of the `complete` method, and,
- - the interpolator object, `Abc`, should be specified (twice).
+ - the interpolator object, `Abc`, should be specified.
 
 In particular, the type of `parts`, `Any*`, should be left unchanged. This does not mean that `Any`
 type may be substituted into an interpolated string; Contextual provides another way to constrain
@@ -265,7 +265,7 @@ Having defined this interpolator, we can bind it to the prefix, `hex` with:
 ```scala
 extension (ctx: StringContext)
   transparent inline def hex(inline parts: Any*): IArray[Byte] =
-    ${Hex.expand('Hex, 'ctx, 'parts)}
+    ${Hex.expand('ctx, 'parts)}
 ```
 
 Note that this should be defined in a different source file from the object `Hex`.
