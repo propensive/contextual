@@ -36,8 +36,9 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
     value.or(throw Mistake("should be impossible"))
   
   def expand
-      (target: Expr[Verifier[ResultType]], ctx: Expr[StringContext])(using Quotes, Type[ResultType])
-      : Expr[ResultType] = expand(target, ctx, Expr.ofSeq(Nil))
+      (ctx: Expr[StringContext])(using Quotes, Type[ResultType])
+      (using thisType: Type[this.type])
+      : Expr[ResultType] = expand(ctx, '{Nil})(using thisType)
 
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = compiletime.erasedValue
@@ -50,11 +51,16 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def complete(value: StateType): ResultType
 
   def expand
-      (target: Expr[Interpolator[InputType, StateType, ResultType]], ctx: Expr[StringContext],
-          seq: Expr[Seq[Any]])
+      (ctx: Expr[StringContext], seq: Expr[Seq[Any]])
+      (using thisType: Type[this.type])
       (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
       : Expr[ResultType] =
     import quotes.reflect.*
+
+    val target = thisType match
+      case '[thisType] =>
+        val ref = Ref(TypeRepr.of[thisType].typeSymbol.companionModule)
+        ref.asExprOf[Interpolator[InputType, StateType, ResultType]]
 
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
