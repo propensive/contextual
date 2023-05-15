@@ -32,8 +32,7 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
   protected def parse(state: Maybe[ResultType], next: Text): Maybe[ResultType] = verify(next)
   protected def skip(state: Maybe[ResultType]): Maybe[ResultType] = state
   protected def insert(state: Maybe[ResultType], value: Nothing): Maybe[ResultType] = state
-  protected def complete(value: Maybe[ResultType]): ResultType =
-    value.or(throw Mistake("should be impossible"))
+  protected def complete(value: Maybe[ResultType]): ResultType = value.option.get
   
   def expand
       (ctx: Expr[StringContext])(using Quotes, Type[ResultType])
@@ -57,7 +56,7 @@ trait Interpolator[InputType, StateType, ResultType]:
       : Expr[ResultType] =
     import quotes.reflect.*
 
-    val target = thisType match
+    val target = (thisType: @unchecked) match
       case '[thisType] =>
         val ref = Ref(TypeRepr.of[thisType].typeSymbol.companionModule)
         ref.asExprOf[Interpolator[InputType, StateType, ResultType]]
@@ -86,12 +85,9 @@ trait Interpolator[InputType, StateType, ResultType]:
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, h]].fold(notFound):
             case '{ $typeclass: Substitution[InputType, `h`, sub] } =>
-              val substitution: String = TypeRepr.of[sub] match
+              val substitution: String = (TypeRepr.of[sub].asMatchable: @unchecked) match
                 case ConstantType(StringConstant(string)) =>
                   string
-                
-                case other =>
-                  throw Mistake(s"unexpected type: $other")
             
               (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
                   Text(parts.head)), positions.head), typeclass)
@@ -99,10 +95,10 @@ trait Interpolator[InputType, StateType, ResultType]:
             case '{ $typeclass: eType } =>
               (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
                   positions.head), typeclass)
-            
-            case _ =>
-              throw Mistake("this case should never match")
 
+            case _ =>
+              throw Mistake("Should never match")
+            
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               Text(${Expr(parts.head)}))}
 
@@ -118,13 +114,10 @@ trait Interpolator[InputType, StateType, ResultType]:
           fail(s"the StringContext extension method parameter does not appear to be inline")
         .parts
         
-        val positions: Seq[Position] = ctx match
-          case '{ (${sc}: StringContext.type).apply(($parts: Seq[String])*) } => parts match
-            case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
-            case _                    => throw Mistake("expected Varargs")
-          
-          case _ =>
-            throw Mistake("expected expression of the form `StringContext.apply(args)`")
+        val positions: Seq[Position] = (ctx: @unchecked) match
+          case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
+            (parts: @unchecked) match
+              case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
         
         try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
             positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
