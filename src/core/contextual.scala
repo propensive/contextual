@@ -22,6 +22,8 @@ import scala.compiletime.*
 import rudiments.*
 import digression.*
 
+import language.experimental.captureChecking
+
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(err"$error at $offset-$length")
 
@@ -64,12 +66,11 @@ trait Interpolator[InputType, StateType, ResultType]:
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
-    def rethrow[T](blk: => T, pos: Position): T throws PositionalError =
-      try blk catch case err: InterpolationError =>
-        err match
-          case InterpolationError(msg, offset, length) =>
-            throw PositionalError(msg, shift(pos, offset.or(0), length.or(pos.end - pos.start -
-                offset.or(0))))
+    def rethrow[ResultType](block: -> ResultType, pos: Position): ResultType =
+      try block catch case err: InterpolationError => err match
+        case InterpolationError(msg, off, len) =>
+          erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
+          throw PositionalError(msg, shift(pos, off.or(0), len.or(pos.end - pos.start - off.or(0))))
 
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
@@ -77,22 +78,22 @@ trait Interpolator[InputType, StateType, ResultType]:
     def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
                   expr: Expr[StateType]): Expr[ResultType] throws PositionalError =
       seq match
-        case '{ $head: h } +: tail =>
+        case '{$head: headType} +: tail =>
           def notFound: Nothing =
-            val typeName: String = TypeRepr.of[h].widen.show
+            val typeName: String = TypeRepr.of[headType].widen.show
             
             fail(s"can't substitute $typeName into this interpolated string", head.asTerm.pos)
 
-          val (newState, typeclass) = Expr.summon[Insertion[InputType, h]].fold(notFound):
-            case '{ $typeclass: Substitution[InputType, `h`, sub] } =>
-              val substitution: String = (TypeRepr.of[sub].asMatchable: @unchecked) match
+          val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound):
+            case '{$typeclass: Substitution[InputType, headType, subType]} =>
+              val substitution: String = (TypeRepr.of[subType].asMatchable: @unchecked) match
                 case ConstantType(StringConstant(string)) =>
                   string
             
               (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
                   Text(parts.head)), positions.head), typeclass)
           
-            case '{ $typeclass: eType } =>
+            case '{$typeclass: eType} =>
               (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
                   positions.head), typeclass)
 
