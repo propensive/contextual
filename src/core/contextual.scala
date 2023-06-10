@@ -42,7 +42,7 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
       : Expr[ResultType] = expand(ctx, '{Nil})(using thisType)
 
 trait Interpolator[InputType, StateType, ResultType]:
-  given CanThrow[InterpolationError] = compiletime.erasedValue
+  given CanThrow[InterpolationError] = ###
 
   protected def initial: StateType
   protected def parse(state: StateType, next: Text): StateType
