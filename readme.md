@@ -70,11 +70,6 @@ object Binary extends Verifier[IArray[Byte]]:
   def verify(content: Text): IArray[Byte] =
     // read content as 0s and 1s and produce an IArray[Byte]
 ```
-or even, using single-abstract-method syntax,
-```scala
-import contextual.*
-val Binary: Verifier[IArray[Byte]] = convert => // conversion
-```
 
 This defines the verifier, but has not yet bound it to a prefix, such as `bin`.
 To achieve this, we need to provide an extension method on `StringContext`,
