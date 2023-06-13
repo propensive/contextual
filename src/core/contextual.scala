@@ -109,29 +109,28 @@ trait Interpolator[InputType, StateType, ResultType]:
           rethrow(complete(state), Position.ofMacroExpansion)
           '{$target.complete($expr)}
     
-    seq match
-      case Varargs(exprs) =>
-        val parts = ctx.value.getOrElse:
-          fail(s"the StringContext extension method parameter does not appear to be inline")
-        .parts
+    val exprs: Seq[Expr[Any]] = seq match
+      case Varargs(exprs) => exprs
+      case _              => Nil
         
-        val positions: Seq[Position] = (ctx: @unchecked) match
-          case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
-            (parts: @unchecked) match
-              case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
-        
-        try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
-            positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
-        catch
-          case err: PositionalError => err match
-            case PositionalError(error, pos) => fail(s"$error", pos)
+    val parts = ctx.value.getOrElse:
+      fail(s"the StringContext extension method parameter does not appear to be inline")
+    .parts
+    
+    val positions: Seq[Position] = (ctx: @unchecked) match
+      case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
+        (parts: @unchecked) match
+          case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
+    
+    try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
+        positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
+    catch
+      case err: PositionalError => err match
+        case PositionalError(error, pos) => fail(s"$error", pos)
 
-          case err: InterpolationError => err match
-            case InterpolationError(error, _, _) => fail(s"$error", Position.ofMacroExpansion)
+      case err: InterpolationError => err match
+        case InterpolationError(error, _, _) => fail(s"$error", Position.ofMacroExpansion)
       
-      case _ =>
-        fail("expected varargs")
-
 trait Insertion[InputType, -T]:
   def embed(value: T): InputType
 
