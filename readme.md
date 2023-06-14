@@ -22,8 +22,7 @@ at compiletime and interpreted at runtime, writing very ordinary user code with 
 
 ## Availability
 
-Contextual has not yet been published as a binary. It is currently waiting for the
-final release of Scala 3.3.
+Contextual has not yet been published as a binary.
 
 ## Getting Started
 
