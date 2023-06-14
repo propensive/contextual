@@ -37,9 +37,9 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
   protected def complete(value: Maybe[ResultType]): ResultType = value.option.get
   
   def expand
-      (ctx: Expr[StringContext])(using Quotes, Type[ResultType])
+      (context: Expr[StringContext])(using Quotes, Type[ResultType])
       (using thisType: Type[this.type])
-      : Expr[ResultType] = expand(ctx, '{Nil})(using thisType)
+      : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###
@@ -52,7 +52,7 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def complete(value: StateType): ResultType
 
   def expand
-      (ctx: Expr[StringContext], seq: Expr[Seq[Any]])
+      (context: Expr[StringContext], seq: Expr[Seq[Any]])
       (using thisType: Type[this.type])
       (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
       : Expr[ResultType] =
@@ -113,11 +113,11 @@ trait Interpolator[InputType, StateType, ResultType]:
       case Varargs(exprs) => exprs
       case _              => Nil
         
-    val parts = ctx.value.getOrElse:
+    val parts = context.value.getOrElse:
       fail(s"the StringContext extension method parameter does not appear to be inline")
     .parts
     
-    val positions: Seq[Position] = (ctx: @unchecked) match
+    val positions: Seq[Position] = (context: @unchecked) match
       case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
         (parts: @unchecked) match
           case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
