@@ -131,7 +131,8 @@ trait Interpolator[InputType, StateType, ResultType]:
       case err: InterpolationError => err match
         case InterpolationError(error, _, _) => fail(s"$error", Position.ofMacroExpansion)
       
-trait Insertion[InputType, -T]:
-  def embed(value: T): InputType
+trait Insertion[InputType, -ValueType]:
+  def embed(value: ValueType): InputType
 
-trait Substitution[InputType, -T, S <: String & Singleton] extends Insertion[InputType, T]
+trait Substitution[InputType, -ValueType, SubstitutionType <: Label]
+extends Insertion[InputType, ValueType]
