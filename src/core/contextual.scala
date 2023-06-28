@@ -56,6 +56,13 @@ trait Interpolator[InputType, StateType, ResultType]:
       (using thisType: Type[this.type])
       (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
       : Expr[ResultType] =
+    expansion(context, seq)(1)
+  
+  def expansion
+      (context: Expr[StringContext], seq: Expr[Seq[Any]])
+      (using thisType: Type[this.type])
+      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
+      : (StateType, Expr[ResultType]) =
     import quotes.reflect.*
 
     val target = (thisType: @unchecked) match
@@ -75,8 +82,10 @@ trait Interpolator[InputType, StateType, ResultType]:
     case class PositionalError(error: Text, position: Position)
     extends Error(err"error $error at position $position")
     
-    def recur(seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
-                  expr: Expr[StateType]): Expr[ResultType] throws PositionalError =
+    def recur
+        (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
+              expr: Expr[StateType])
+        : (StateType, Expr[ResultType]) throws PositionalError =
       seq match
         case '{$head: headType} +: tail =>
           def notFound: Nothing =
@@ -107,7 +116,7 @@ trait Interpolator[InputType, StateType, ResultType]:
         
         case _ =>
           rethrow(complete(state), Position.ofMacroExpansion)
-          '{$target.complete($expr)}
+          (state, '{$target.complete($expr)})
     
     val exprs: Seq[Expr[Any]] = seq match
       case Varargs(exprs) => exprs
