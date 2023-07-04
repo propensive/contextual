@@ -1,7 +1,7 @@
 # This is a buildfile for Fury or Wrath.
 # More information is available at: https://github.com/propensive/wrath/
 
-repo propensive/digression
+repo propensive/rudiments
 
 target contextual/core
 
@@ -9,5 +9,5 @@ project contextual
   module core
     compiler  scala
     sources   src/core
-    include   digression/core
+    include   rudiments/core
 

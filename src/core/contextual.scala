@@ -20,7 +20,6 @@ import scala.quoted.*
 import scala.compiletime.*
 
 import rudiments.*
-import digression.*
 
 import language.experimental.captureChecking
 
