@@ -25,7 +25,7 @@ import digression.*
 import language.experimental.captureChecking
 
 case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-extends Error(err"$error at $offset-$length")
+extends Error(msg"$error at $offset-$length")
 
 trait Verifier[ResultType]
 extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
@@ -80,7 +80,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           throw PositionalError(msg, shift(pos, off.or(0), len.or(pos.end - pos.start - off.or(0))))
 
     case class PositionalError(error: Text, position: Position)
-    extends Error(err"error $error at position $position")
+    extends Error(msg"error $error at position $position")
     
     def recur
         (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
