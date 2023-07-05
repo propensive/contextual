@@ -23,7 +23,7 @@ import rudiments.*
 
 import language.experimental.captureChecking
 
-case class InterpolationError(error: Text, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
+case class InterpolationError(error: Message, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(msg"$error at $offset-$length")
 
 trait Verifier[ResultType]
@@ -78,8 +78,8 @@ trait Interpolator[InputType, StateType, ResultType]:
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
           throw PositionalError(msg, shift(pos, off.or(0), len.or(pos.end - pos.start - off.or(0))))
 
-    case class PositionalError(error: Text, position: Position)
-    extends Error(msg"error $error at position $position")
+    case class PositionalError(positionalMessage: Message, position: Position)
+    extends Error(msg"error $positionalMessage at position $position")
     
     def recur
         (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
@@ -90,7 +90,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[headType].widen.show
             
-            fail(s"can't substitute $typeName into this interpolated string", head.asTerm.pos)
+            fail(msg"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound):
             case '{$typeclass: Substitution[InputType, headType, subType]} =>
@@ -122,7 +122,7 @@ trait Interpolator[InputType, StateType, ResultType]:
       case _              => Nil
         
     val parts = context.value.getOrElse:
-      fail(s"the StringContext extension method parameter does not appear to be inline")
+      fail(msg"the StringContext extension method parameter does not appear to be inline")
     .parts
     
     val positions: Seq[Position] = (context: @unchecked) match
@@ -134,10 +134,10 @@ trait Interpolator[InputType, StateType, ResultType]:
         positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
     catch
       case err: PositionalError => err match
-        case PositionalError(error, pos) => fail(s"$error", pos)
+        case PositionalError(message, pos) => fail(message, pos)
 
       case err: InterpolationError => err match
-        case InterpolationError(error, _, _) => fail(s"$error", Position.ofMacroExpansion)
+        case InterpolationError(message, _, _) => fail(message, Position.ofMacroExpansion)
       
 trait Insertion[InputType, -ValueType]:
   def embed(value: ValueType): InputType
