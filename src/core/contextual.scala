@@ -24,7 +24,7 @@ import rudiments.*
 import language.experimental.captureChecking
 
 case class InterpolationError(error: Message, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
-extends Error(msg"$error at $offset-$length")
+extends Error(msg"$error at ${offset.or(-1)} - ${length.or(-1)}")
 
 trait Verifier[ResultType]
 extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
@@ -79,7 +79,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           throw PositionalError(msg, shift(pos, off.or(0), len.or(pos.end - pos.start - off.or(0))))
 
     case class PositionalError(positionalMessage: Message, position: Position)
-    extends Error(msg"error $positionalMessage at position $position")
+    extends Error(msg"error $positionalMessage at position ${position.start}")
     
     def recur
         (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
