@@ -92,21 +92,19 @@ trait Interpolator[InputType, StateType, ResultType]:
             
             fail(msg"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
-          val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound):
-            case '{$typeclass: Substitution[InputType, headType, subType]} =>
-              val substitution: String = (TypeRepr.of[subType].asMatchable: @unchecked) match
-                case ConstantType(StringConstant(string)) =>
-                  string
+          val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
+            (insertion: @unchecked) match
+              case '{$typeclass: Substitution[InputType, headType, subType]} =>
+                val substitution: String = (TypeRepr.of[subType].asMatchable: @unchecked) match
+                  case ConstantType(StringConstant(string)) =>
+                    string
             
-              (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
-                  Text(parts.head)), positions.head), typeclass)
+                (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
+                    Text(parts.head)), positions.head), typeclass)
           
-            case '{$typeclass: eType} =>
-              (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
-                  positions.head), typeclass)
-
-            case _ =>
-              throw Mistake("Should never match")
+              case '{$typeclass: eType} =>
+                (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
+                    positions.head), typeclass)
             
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               Text(${Expr(parts.head)}))}
