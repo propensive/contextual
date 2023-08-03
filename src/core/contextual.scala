@@ -19,6 +19,7 @@ package contextual
 import scala.quoted.*
 import scala.compiletime.*
 
+import fulminate.*
 import rudiments.*
 import anticipation.*
 
