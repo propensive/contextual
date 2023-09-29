@@ -74,7 +74,7 @@ trait Interpolator[InputType, StateType, ResultType]:
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
-    def rethrow[ResultType](block: -> ResultType, pos: Position): ResultType =
+    def rethrow[SuccessType](block: -> SuccessType, pos: Position): SuccessType =
       try block catch case err: InterpolationError => err match
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
