@@ -23,7 +23,7 @@ import fulminate.*
 import rudiments.*
 import anticipation.*
 
-//import language.experimental.captureChecking
+import language.experimental.captureChecking
 
 case class InterpolationError(error: Message, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
 extends Error(msg"$error at ${offset.or(-1)} - ${length.or(-1)}")
@@ -42,7 +42,7 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
       (using thisType: Type[this.type])
       : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
-trait Interpolator[InputType, StateType, ResultType]:
+trait Interpolator[InputType, sealed StateType, sealed ResultType]:
   given CanThrow[InterpolationError] = ###
 
   protected def initial: StateType
@@ -74,7 +74,7 @@ trait Interpolator[InputType, StateType, ResultType]:
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
-    def rethrow[SuccessType](block: => SuccessType, pos: Position): SuccessType =
+    def rethrow[sealed SuccessType](block: => SuccessType, pos: Position): SuccessType =
       try block catch case err: InterpolationError => err match
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
