@@ -22,6 +22,6 @@ jobs:
       with:
         repository: 'propensive/wrath'
         path: 'wrath'
-        ref: '0.5.0'
+        ref: '0.5.1'
     - name: Build
       run: "wrath/wrath -F"
