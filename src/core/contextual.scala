@@ -42,7 +42,7 @@ extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
       (using thisType: Type[this.type])
       : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
-trait Interpolator[InputType, sealed StateType, sealed ResultType]:
+trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###
 
   protected def initial: StateType
@@ -74,7 +74,7 @@ trait Interpolator[InputType, sealed StateType, sealed ResultType]:
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
 
-    def rethrow[sealed SuccessType](block: => SuccessType, pos: Position): SuccessType =
+    def rethrow[SuccessType](block: => SuccessType, pos: Position): SuccessType =
       try block catch case err: InterpolationError => err match
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
