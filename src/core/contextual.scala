@@ -25,17 +25,17 @@ import anticipation.*
 
 import language.experimental.captureChecking
 
-case class InterpolationError(error: Message, offset: Maybe[Int] = Unset, length: Maybe[Int] = Unset)
+case class InterpolationError(error: Message, offset: Optional[Int] = Unset, length: Optional[Int] = Unset)
 extends Error(msg"$error at ${offset.or(-1)} - ${length.or(-1)}")
 
 trait Verifier[ResultType]
-extends Interpolator[Nothing, Maybe[ResultType], ResultType]:
+extends Interpolator[Nothing, Optional[ResultType], ResultType]:
   def verify(text: Text): ResultType
-  protected def initial: Maybe[ResultType] = Unset
-  protected def parse(state: Maybe[ResultType], next: Text): Maybe[ResultType] = verify(next)
-  protected def skip(state: Maybe[ResultType]): Maybe[ResultType] = state
-  protected def insert(state: Maybe[ResultType], value: Nothing): Maybe[ResultType] = state
-  protected def complete(value: Maybe[ResultType]): ResultType = value.option.get
+  protected def initial: Optional[ResultType] = Unset
+  protected def parse(state: Optional[ResultType], next: Text): Optional[ResultType] = verify(next)
+  protected def skip(state: Optional[ResultType]): Optional[ResultType] = state
+  protected def insert(state: Optional[ResultType], value: Nothing): Optional[ResultType] = state
+  protected def complete(value: Optional[ResultType]): ResultType = value.option.get
   
   def expand
       (context: Expr[StringContext])(using Quotes, Type[ResultType])
