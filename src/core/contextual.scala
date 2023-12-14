@@ -66,10 +66,8 @@ trait Interpolator[InputType, StateType, ResultType]:
       : (StateType, Expr[ResultType]) =
     import quotes.reflect.*
 
-    val target = (thisType: @unchecked) match
-      case '[thisType] =>
-        val ref = Ref(TypeRepr.of[thisType].typeSymbol.companionModule)
-        ref.asExprOf[Interpolator[InputType, StateType, ResultType]]
+    val ref = Ref(TypeRepr.of(using thisType).typeSymbol.companionModule)
+    val target = ref.asExprOf[Interpolator[InputType, StateType, ResultType]]
 
     def shift(pos: Position, offset: Int, length: Int): Position =
       Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
