@@ -21,6 +21,7 @@ import scala.compiletime.*
 
 import fulminate.*
 import rudiments.*
+import vacuous.*
 import anticipation.*
 
 import language.experimental.captureChecking
