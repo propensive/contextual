@@ -34,11 +34,13 @@ may also include variable substitutions: expressions written inline, prefixed wi
 and—if the expression is anything more complicated than an alphanumeric identifier—requiring braces
 (`{`, `}`) around it. For example,
 ```scala
-s"Hello, $name"
+val name = "Sarah"
+val string = s"Hello, $name"
 ```
 or,
 ```scala
-s"Tomorrow will be Day ${day + 1}."
+val day = 6
+val string2 = s"Tomorrow will be Day ${day + 1}."
 ```
 
 Anyone can write an interpolated string using an extension method on `StringContext`, and it will be
@@ -65,8 +67,10 @@ A new verifier needs just a a type parameter for the return type of the
 verifier, and a single method, `verify`, for example, a binary reader:
 ```scala
 import contextual.*
+import anticipation.Text
+
 object Binary extends Verifier[IArray[Byte]]:
-  def verify(content: Text): IArray[Byte] =
+  def verify(content: Text): IArray[Byte] = ???
     // read content as 0s and 1s and produce an IArray[Byte]
 ```
 
@@ -134,7 +138,7 @@ trait Interpolator[Input, State, Result]:
   def parse(state: State, next: Text): State
   def insert(state: State, value: Input): State
   def skip(state: State): State
-  def complete(value: State): Return
+  def complete(value: State): Result
 ```
 
 Three abstract types are used in their definitions: `State` represents the information passed from
@@ -159,12 +163,12 @@ url"https://example.com/$dir/images/$img"
 could be interpreted by a Contextual interpolator, in which case it would be checked at
 compiletime with the composed invocation,
 ```scala
-complete(parse(insert(parse(insert(parse(initial, "https://example.com/"), None),
+val result = complete(parse(insert(parse(insert(parse(initial, "https://example.com/"), None),
     "/images/"), None), ""))
 ```
 and at runtime with something which is essentially this:
 ```scala
-complete(parse(insert(parse(insert(parse(initial, "https://example.com/"), Some(dir)),
+val runtimeResult = complete(parse(insert(parse(insert(parse(initial, "https://example.com/"), Some(dir)),
     "/images/"), Some(img)), ""))
 ```
 
@@ -185,10 +189,7 @@ second parameter of `InterpolationError` allows an offset to be specified, relat
 the literal part currently being parsed, and a third parameter allows its length to be specified.
 
 For example, if we were parsing `url"https://example.ocm/$dir/images/$img"`, and wanted to highlight
-the mistake in the invalid TLD `.ocm`, we would throw,
-```scala
-InterpolationError("not a valid TLD", 15, 4)
-```
+the mistake in the invalid TLD `.ocm`, we would throw, `InterpolationError("not a valid TLD", 15, 4)`
 during the first invocation of `parse`, and the Scala compiler would highlight `.ocm` as the error
 location: in this example, `15` is the offset from the start of this part of the string to the
 error location, and `4` is the length of the error.
@@ -265,8 +266,11 @@ basis of the singleton `String` literal included in the given's signature. This 
 Here is a trivial interpolator which can parse, for example, `hex"a948b0${x}710bff"`, and return an
 `IArray[Byte]`:
 ```scala
+import rudiments.*
+import anticipation.*
+
 object Hex extends Interpolator[Long, Text, IArray[Byte]]:
-  def initial: Text = t""
+  def initial: Text = ""
 
   def parse(state: Text, next: Text): Text =
     if next.forall(hexChar(_)) then state+next
@@ -274,14 +278,14 @@ object Hex extends Interpolator[Long, Text, IArray[Byte]]:
   
   def insert(state: Text, value: Option[Long]): Text =
     value match
-      case None       => t"${state}0"
-      case Some(long) => t${state}${long.toHexString}"
+      case None       => s"${state}0".tt
+      case Some(long) => s"${state}${long.toHexString}".tt
   
   def complete(state: Text): IArray[Byte] =
     IArray.from(convertStringToByteArray(state))
   
   private def hexChar(ch: Char): Boolean =
-    ch.isDigit || ch >= 'a' && ch <= 'f' || ch >= 'A' && ch <: 'F'
+    ch.isDigit || 'a' <= ch <= 'f' || 'A' <= ch <= 'F'
 ```
 
 Having defined this interpolator, we can bind it to the prefix, `hex` with:
