@@ -14,6 +14,6 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v3
     - name: Tidy repository
-      uses: propensive/tumult@0.5.1
+      uses: propensive/tumult@0.5.2
     - name: Autocommit changes
       uses: stefanzweifel/git-auto-commit-action@v4
