@@ -307,6 +307,7 @@ Note that this should be defined in a different source file from the object `Hex
 
 
 
+
 ## Status
 
 Contextual is classified as __maturescent__. For reference, Scala One projects are
@@ -409,6 +410,6 @@ The logo is of a quote symbol, alluding to Contextual's subject matter of quoted
 
 ## License
 
-Contextual is copyright &copy; 2023 Jon Pretty & Propensive O&Uuml;, and
+Contextual is copyright &copy; 2024 Jon Pretty & Propensive O&Uuml;, and
 is made available under the [Apache 2.0 License](/license.md).
 
