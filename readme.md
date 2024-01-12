@@ -23,8 +23,8 @@ at compiletime and interpreted at runtime, writing very ordinary user code with 
 ## Availability Plan
 
 Contextual has not yet been published. The medium-term plan is to build Contextual
-with [Fury](/propensive/fury) and to publish it as a source build on
-[Vent](/propensive/vent). This will enable ordinary users to write and build
+with [Fury](https://github.com/propensive/fury) and to publish it as a source build on
+[Vent](https://github.com/propensive/vent). This will enable ordinary users to write and build
 software which depends on Contextual.
 
 Subsequently, Contextual will also be made available as a binary in the Maven
@@ -304,6 +304,7 @@ extension (ctx: StringContext)
 ```
 
 Note that this should be defined in a different source file from the object `Hex`.
+
 
 
 
