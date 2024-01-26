@@ -3,7 +3,7 @@
 
 repo propensive/rudiments
 
-target contextual/core
+target contextual/test
 
 project contextual
   module core
@@ -11,3 +11,8 @@ project contextual
     sources   src/core
     include   rudiments/core
 
+  module test
+    compiler  scala
+    sources   src/test
+    include   probably/cli contextual/core
+    main      contextual.Tests
