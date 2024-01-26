@@ -19,8 +19,6 @@ package contextual
 import probably.*
 import gossamer.*
 
-import unsafeExceptions.canThrowAny
-
 object Tests extends Suite(t"Contextual Tests"):
   def run(): Unit =
     ()
