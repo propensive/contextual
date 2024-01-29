@@ -43,9 +43,6 @@ extends Interpolator[Nothing, Optional[ResultType], ResultType]:
       (using thisType: Type[this.type])
       : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
-case class PositionalError(positionalMessage: Message, start: Int, end: Int)
-extends Error(msg"error $positionalMessage at position $start")
-    
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###
 
@@ -55,6 +52,9 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def substitute(state: StateType, value: Text): StateType = parse(state, value)
   protected def insert(state: StateType, value: InputType): StateType
   protected def complete(value: StateType): ResultType
+  
+  case class PositionalError(positionalMessage: Message, start: Int, end: Int)
+  extends Error(msg"error $positionalMessage at position $start")
 
   def expand
       (context: Expr[StringContext], seq: Expr[Seq[Any]])
