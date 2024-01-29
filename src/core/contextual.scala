@@ -43,6 +43,9 @@ extends Interpolator[Nothing, Optional[ResultType], ResultType]:
       (using thisType: Type[this.type])
       : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
+case class PositionalError(positionalMessage: Message, start: Int, end: Int)
+extends Error(msg"error $positionalMessage at position $start")
+    
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###
 
@@ -70,18 +73,12 @@ trait Interpolator[InputType, StateType, ResultType]:
     val ref = Ref(TypeRepr.of(using thisType).typeSymbol.companionModule)
     val target = ref.asExprOf[Interpolator[InputType, StateType, ResultType]]
 
-    def shift(pos: Position, offset: Int, length: Int): Position =
-      Position(pos.sourceFile, pos.start + offset, pos.start + offset + length)
-
-    def rethrow[SuccessType](block: => SuccessType, pos: Position): SuccessType =
+    def rethrow[SuccessType](block: => SuccessType, start: Int, end: Int): SuccessType =
       try block catch case err: InterpolationError => err match
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
-          throw PositionalError(msg, shift(pos, off.or(0), len.or(pos.end - pos.start - off.or(0))))
+          throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
-    case class PositionalError(positionalMessage: Message, position: Position)
-    extends Error(msg"error $positionalMessage at position ${position.start}")
-    
     def recur
         (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
               expr: Expr[StateType])
@@ -100,12 +97,12 @@ trait Interpolator[InputType, StateType, ResultType]:
                   case ConstantType(StringConstant(string)) =>
                     string
             
-                (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos),
-                    Text(parts.head)), positions.head), typeclass)
+                (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos.start, expr.asTerm.pos.end),
+                    Text(parts.head)), positions.head.start, positions.head.end), typeclass)
           
               case '{$typeclass: eType} =>
-                (rethrow(parse(rethrow(skip(state), expr.asTerm.pos), Text(parts.head)),
-                    positions.head), typeclass)
+                (rethrow(parse(rethrow(skip(state), expr.asTerm.pos.start, expr.asTerm.pos.end), Text(parts.head)),
+                    positions.head.start, positions.head.end), typeclass)
             
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               Text(${Expr(parts.head)}))}
@@ -113,7 +110,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           recur(tail, parts.tail, positions.tail, newState, next)
         
         case _ =>
-          rethrow(complete(state), Position.ofMacroExpansion)
+          rethrow(complete(state), Position.ofMacroExpansion.start, Position.ofMacroExpansion.end)
           (state, '{$target.complete($expr)})
     
     val exprs: Seq[Expr[Any]] = seq match
@@ -130,10 +127,10 @@ trait Interpolator[InputType, StateType, ResultType]:
           case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
     
     try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
-        positions.head), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
+        positions.head.start, positions.head.end), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
     catch
       case err: PositionalError => err match
-        case PositionalError(message, pos) => fail(message, pos)
+        case PositionalError(message, start, end) => fail(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
 
       case err: InterpolationError => err match
         case InterpolationError(message, _, _) => fail(message, Position.ofMacroExpansion)
