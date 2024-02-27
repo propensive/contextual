@@ -38,10 +38,8 @@ extends Interpolator[Nothing, Optional[ResultType], ResultType]:
   protected def insert(state: Optional[ResultType], value: Nothing): Optional[ResultType] = state
   protected def complete(value: Optional[ResultType]): ResultType = value.option.get
   
-  def expand
-      (context: Expr[StringContext])(using Quotes, Type[ResultType])
-      (using thisType: Type[this.type])
-      : Expr[ResultType] = expand(context, '{Nil})(using thisType)
+  def expand(context: Expr[StringContext])(using Quotes, Type[ResultType])(using thisType: Type[this.type])
+        : Expr[ResultType] = expand(context, '{Nil})(using thisType)
 
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###
@@ -57,11 +55,10 @@ trait Interpolator[InputType, StateType, ResultType]:
   case class PositionalError(positionalMessage: Message, start: Int, end: Int)
   extends Error(msg"error $positionalMessage at position $start")
 
-  def expand
-      (context: Expr[StringContext], seq: Expr[Seq[Any]])
-      (using thisType: Type[this.type])
+  def expand(context: Expr[StringContext], seq: Expr[Seq[Any]])(using thisType: Type[this.type])
       (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
-      : Expr[ResultType] =
+        : Expr[ResultType] =
+
     expansion(context, seq)(1)
   
   def expansion
@@ -82,8 +79,9 @@ trait Interpolator[InputType, StateType, ResultType]:
 
     def recur
         (seq: Seq[Expr[Any]], parts: Seq[String], positions: Seq[Position], state: StateType,
-              expr: Expr[StateType])
-        : (StateType, Expr[ResultType]) throws PositionalError =
+            expr: Expr[StateType])
+          : (StateType, Expr[ResultType]) throws PositionalError =
+
       seq match
         case '{$head: headType} +: tail =>
           def notFound: Nothing =
