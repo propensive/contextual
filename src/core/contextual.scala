@@ -78,11 +78,11 @@ trait Interpolator[InputType, StateType, ResultType]:
           throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
     def recur
-        ( seq:       Seq[Expr[Any]],
-          parts:     Seq[String],
-          positions: Seq[Position],
-          state:     StateType,
-          expr:      Expr[StateType] )
+        (seq:       Seq[Expr[Any]],
+         parts:     Seq[String],
+         positions: Seq[Position],
+         state:     StateType,
+         expr:      Expr[StateType])
             : (StateType, Expr[ResultType]) throws PositionalError =
 
       seq match
