@@ -10,7 +10,8 @@
     
 ecosystem vent 3 https://github.com/propensive/vent main
 
-command build contextual/core
+command compile contextual/core
+default compile
 
 project contextual
   name         Contextual
