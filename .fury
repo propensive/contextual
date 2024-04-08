@@ -16,6 +16,7 @@ default compile
 project contextual
   name         Contextual
   website      https://github.com/propensive/contextual
+  license      apache-2
   description  Statically-checked string interpolation
 
   module core
