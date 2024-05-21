@@ -3,7 +3,7 @@
 
 repo propensive/rudiments
 
-target contextual/test
+target contextual/core
 
 project contextual
   module core

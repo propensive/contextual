@@ -1,0 +1,47 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project
+    xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  <modelVersion>4.0.0</modelVersion>
+  <groupId>dev.soundness</groupId>
+  <artifactId>contextual-core</artifactId>
+  <version>0.1.0</version>
+  <licenses>
+    <license>
+      <name>Apache 2</name>
+      <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+      <distribution>repo</distribution>
+    </license>
+  </licenses>
+  <name>Contextual</name>
+  <description>Statically-checked string interpolation</description>
+  <url>https://soundness.dev/contextual</url>
+  <packaging>jar</packaging>
+  <properties>
+    <java.version>21</java.version>
+    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>dev.soundness</groupId>
+      <artifactId>rudiments-core</artifactId>
+      <version>0.1.0</version>
+    </dependency>
+  </dependencies>
+  <organization>
+    <name>Propensive</name>
+    <url>https://propensive.com/</url>
+  </organization>
+  <scm>
+    <url>https://github.com/propensive/contextual</url>
+    <connection>scm:git@github.com:propensive/contextual.git</connection>
+  </scm>
+  <developers>
+    <developer>
+      <id>propensive</id>
+      <name>Jon Pretty</name>
+      <email>jon.pretty@propensive.com</email>
+      <url>https://propensive.com/</url>
+    </developer>
+  </developers>
+</project>
