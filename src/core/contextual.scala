@@ -90,7 +90,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[headType].widen.show
             
-            fail(msg"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
+            abandon(msg"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
             (insertion: @unchecked) match
@@ -120,7 +120,7 @@ trait Interpolator[InputType, StateType, ResultType]:
       case _              => Nil
         
     val parts = context.value.getOrElse:
-      fail(msg"the StringContext extension method parameter does not appear to be inline")
+      abandon(msg"the StringContext extension method parameter does not appear to be inline")
     .parts
     
     val positions: Seq[Position] = (context: @unchecked) match
@@ -132,10 +132,10 @@ trait Interpolator[InputType, StateType, ResultType]:
         positions.head.start, positions.head.end), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
     catch
       case err: PositionalError => err match
-        case PositionalError(message, start, end) => fail(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
+        case PositionalError(message, start, end) => abandon(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
 
       case err: InterpolationError => err match
-        case InterpolationError(message, _, _) => fail(message, Position.ofMacroExpansion)
+        case InterpolationError(message, _, _) => abandon(message, Position.ofMacroExpansion)
       
 trait Insertion[InputType, -ValueType]:
   def embed(value: ValueType): InputType
