@@ -24,4 +24,4 @@ import fulminate.*
 import vacuous.*
 
 case class InterpolationError(error: Message, offset: Optional[Int] = Unset, length: Optional[Int] = Unset)
-extends Error(msg"$error at ${offset.or(-1)} - ${length.or(-1)}")
+extends Error(m"$error at ${offset.or(-1)} - ${length.or(-1)}")

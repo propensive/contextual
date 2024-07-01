@@ -38,7 +38,7 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def complete(value: StateType): ResultType
 
   case class PositionalError(positionalMessage: Message, start: Int, end: Int)
-  extends Error(msg"error $positionalMessage at position $start")
+  extends Error(m"error $positionalMessage at position $start")
 
   def expand(context: Expr[StringContext], seq: Expr[Seq[Any]])(using thisType: Type[this.type])
       (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
@@ -75,7 +75,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[headType].widen.show
 
-            abandon(msg"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
+            abandon(m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
             (insertion: @unchecked) match
@@ -105,7 +105,7 @@ trait Interpolator[InputType, StateType, ResultType]:
       case _              => Nil
 
     val parts = context.value.getOrElse:
-      abandon(msg"the StringContext extension method parameter does not appear to be inline")
+      abandon(m"the StringContext extension method parameter does not appear to be inline")
     .parts
 
     val positions: Seq[Position] = (context: @unchecked) match
