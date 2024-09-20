@@ -37,7 +37,7 @@ trait Interpolator[InputType, StateType, ResultType]:
   protected def insert(state: StateType, value: InputType): StateType
   protected def complete(value: StateType): ResultType
 
-  case class PositionalError(positionalMessage: Message, start: Int, end: Int)
+  case class PositionalError(positionalMessage: Message, start: Int, end: Int)(using Diagnostics)
   extends Error(m"error $positionalMessage at position $start")
 
   def expand(context: Expr[StringContext], seq: Expr[Seq[Any]])(using thisType: Type[this.type])
@@ -60,6 +60,8 @@ trait Interpolator[InputType, StateType, ResultType]:
       try block catch case err: InterpolationError => err match
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
+          given Diagnostics = Diagnostics.omit
+          
           throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
     def recur
