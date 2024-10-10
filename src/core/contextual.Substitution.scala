@@ -20,9 +20,5 @@ import language.experimental.captureChecking
 
 import rudiments.*
 
-object Substitution:
-  given [ValueType: Embeddable] => Substitution[ValueType.Operand, ValueType, "x"] =
-    ValueType.embed(_)
-
 trait Substitution[InputType, -ValueType, SubstitutionType <: Label]
 extends Insertion[InputType, ValueType]
