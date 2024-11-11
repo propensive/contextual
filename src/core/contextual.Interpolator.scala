@@ -41,16 +41,16 @@ trait Interpolator[InputType, StateType, ResultType]:
   extends Error(m"error $positionalMessage at position $start")
 
   def expand(context: Expr[StringContext], seq: Expr[Seq[Any]])(using thisType: Type[this.type])
-      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
+     (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
           : Expr[ResultType] =
 
     expansion(context, seq)(1)
 
   def expansion
-      (context: Expr[StringContext], seq: Expr[Seq[Any]])
-      (using thisType: Type[this.type])
-      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
-        : (StateType, Expr[ResultType]) =
+     (context: Expr[StringContext], seq: Expr[Seq[Any]])
+     (using thisType: Type[this.type])
+     (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
+          : (StateType, Expr[ResultType]) =
     import quotes.reflect.*
 
     val ref = Ref(TypeRepr.of(using thisType).typeSymbol.companionModule)
@@ -61,15 +61,15 @@ trait Interpolator[InputType, StateType, ResultType]:
         case InterpolationError(msg, off, len) =>
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
           given Diagnostics = Diagnostics.omit
-          
+
           throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
     def recur
-        (seq:       Seq[Expr[Any]],
-         parts:     Seq[String],
-         positions: Seq[Position],
-         state:     StateType,
-         expr:      Expr[StateType])
+       (seq:       Seq[Expr[Any]],
+        parts:     Seq[String],
+        positions: Seq[Position],
+        state:     StateType,
+        expr:      Expr[StateType])
             : (StateType, Expr[ResultType]) throws PositionalError =
 
       seq match
