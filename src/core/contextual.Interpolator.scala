@@ -108,7 +108,8 @@ trait Interpolator[InputType, StateType, ResultType]:
 
     val parts = context.value.getOrElse:
       abandon(m"the StringContext extension method parameter does not appear to be inline")
-    .parts
+
+    . parts
 
     val positions: Seq[Position] = (context: @unchecked) match
       case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
