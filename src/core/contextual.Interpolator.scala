@@ -18,13 +18,13 @@ package contextual
 
 import language.experimental.captureChecking
 
-import scala.quoted.*
 import scala.compiletime.*
+import scala.quoted.*
 
+import anticipation.*
 import fulminate.*
 import rudiments.*
 import vacuous.*
-import anticipation.*
 
 trait Interpolator[InputType, StateType, ResultType]:
   given CanThrow[InterpolationError] = ###

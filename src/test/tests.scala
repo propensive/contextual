@@ -16,8 +16,8 @@
 
 package contextual
 
-import probably.*
 import gossamer.*
+import probably.*
 
 object Tests extends Suite(t"Contextual Tests"):
   def run(): Unit =

@@ -20,8 +20,8 @@ import language.experimental.captureChecking
 
 import scala.quoted.*
 
-import vacuous.*
 import anticipation.*
+import vacuous.*
 
 trait Verifier[ResultType]
 extends Interpolator[Nothing, Optional[ResultType], ResultType]:
