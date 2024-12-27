@@ -77,7 +77,7 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[headType].widen.show
 
-            abandon(m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
+            halt(m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
             (insertion: @unchecked) match
@@ -107,7 +107,7 @@ trait Interpolator[InputType, StateType, ResultType]:
       case _              => Nil
 
     val parts = context.value.getOrElse:
-      abandon(m"the StringContext extension method parameter does not appear to be inline")
+      halt(m"the StringContext extension method parameter does not appear to be inline")
 
     . parts
 
@@ -120,7 +120,7 @@ trait Interpolator[InputType, StateType, ResultType]:
         positions.head.start, positions.head.end), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
     catch
       case err: PositionalError => err match
-        case PositionalError(message, start, end) => abandon(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
+        case PositionalError(message, start, end) => halt(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
 
       case err: InterpolationError => err match
-        case InterpolationError(message, _, _) => abandon(message, Position.ofMacroExpansion)
+        case InterpolationError(message, _, _) => halt(message, Position.ofMacroExpansion)
