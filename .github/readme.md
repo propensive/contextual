@@ -25,6 +25,7 @@ at compiletime and interpreted at runtime, writing very ordinary user code with 
 
 
 
+
 ## Getting Started
 
 ### About Interpolators
@@ -404,6 +405,6 @@ The logo is of a quote symbol, alluding to Contextual's subject matter of quoted
 
 ## License
 
-Contextual is copyright &copy; 2024 Jon Pretty & Propensive O&Uuml;, and
+Contextual is copyright &copy; 2025 Jon Pretty & Propensive O&Uuml;, and
 is made available under the [Apache 2.0 License](/license.md).
 
