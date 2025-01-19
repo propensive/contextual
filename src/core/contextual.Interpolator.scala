@@ -16,8 +16,6 @@
 
 package contextual
 
-import language.experimental.captureChecking
-
 import scala.compiletime.*
 import scala.quoted.*
 
