@@ -40,7 +40,7 @@ trait Interpolator[InputType, StateType, ResultType]:
 
   def expand(context: Expr[StringContext], seq: Expr[Seq[Any]])(using thisType: Type[this.type])
      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
-          : Expr[ResultType] =
+  :     Expr[ResultType] =
 
     expansion(context, seq)(1)
 
@@ -48,7 +48,7 @@ trait Interpolator[InputType, StateType, ResultType]:
      (context: Expr[StringContext], seq: Expr[Seq[Any]])
      (using thisType: Type[this.type])
      (using Quotes, Type[InputType], Type[StateType], Type[ResultType])
-          : (StateType, Expr[ResultType]) =
+  :     (StateType, Expr[ResultType]) =
     import quotes.reflect.*
 
     val ref = Ref(TypeRepr.of(using thisType).typeSymbol.companionModule)
@@ -63,12 +63,12 @@ trait Interpolator[InputType, StateType, ResultType]:
           throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
     def recur
-       (seq:       Seq[Expr[Any]],
-        parts:     Seq[String],
+       (seq:      Seq[Expr[Any]],
+        parts:    Seq[String],
         positions: Seq[Position],
-        state:     StateType,
-        expr:      Expr[StateType])
-            : (StateType, Expr[ResultType]) throws PositionalError =
+        state:    StateType,
+        expr:     Expr[StateType])
+    :     (StateType, Expr[ResultType]) throws PositionalError =
 
       seq match
         case '{$head: headType} +: tail =>
