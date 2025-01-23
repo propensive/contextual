@@ -78,9 +78,9 @@ trait Interpolator[InputType, StateType, ResultType]:
             halt(m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
-            (insertion: @unchecked) match
+            insertion.runtimeChecked match
               case '{$typeclass: Substitution[InputType, headType, subType]} =>
-                val substitution: String = (TypeRepr.of[subType].asMatchable: @unchecked) match
+                val substitution: String = TypeRepr.of[subType].asMatchable.runtimeChecked match
                   case ConstantType(StringConstant(string)) =>
                     string
 
@@ -109,9 +109,9 @@ trait Interpolator[InputType, StateType, ResultType]:
 
     . parts
 
-    val positions: Seq[Position] = (context: @unchecked) match
+    val positions: Seq[Position] = context.runtimeChecked match
       case '{(${sc}: StringContext.type).apply(($parts: Seq[String])*)} =>
-        (parts: @unchecked) match
+        parts.runtimeChecked match
           case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
 
     try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
