@@ -32,5 +32,6 @@ extends Interpolator[Nothing, Optional[ResultType], ResultType]:
   protected def insert(state: Optional[ResultType], value: Nothing): Optional[ResultType] = state
   protected def complete(value: Optional[ResultType]): ResultType = value.option.get
 
-  def expand(context: Expr[StringContext])(using Quotes, Type[ResultType])(using thisType: Type[this.type])
+  def expand(context: Expr[StringContext])(using Quotes, Type[ResultType])
+     (using thisType: Type[this.type])
   :     Expr[ResultType] = expand(context, '{Nil})(using thisType)

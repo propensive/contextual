@@ -60,7 +60,8 @@ trait Interpolator[InputType, StateType, ResultType]:
           erased given CanThrow[PositionalError] = unsafeExceptions.canThrowAny
           given Diagnostics = Diagnostics.omit
 
-          throw PositionalError(msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
+          throw PositionalError
+                 (msg, start + off.or(0), start + off.or(0) + len.or(end - start - off.or(0)))
 
     def recur
        (seq:      Seq[Expr[Any]],
@@ -75,7 +76,8 @@ trait Interpolator[InputType, StateType, ResultType]:
           def notFound: Nothing =
             val typeName: String = TypeRepr.of[headType].widen.show
 
-            halt(m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
+            halt
+             (m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
           val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
             insertion.absolve match
