@@ -79,19 +79,32 @@ trait Interpolator[InputType, StateType, ResultType]:
             halt
              (m"can't substitute ${Text(typeName)} into this interpolated string", head.asTerm.pos)
 
-          val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound): insertion =>
-            insertion.absolve match
+          val (newState, typeclass) = Expr.summon[Insertion[InputType, headType]].fold(notFound):
+            _.absolve match
               case '{$typeclass: Substitution[InputType, headType, subType]} =>
                 val substitution: String = TypeRepr.of[subType].asMatchable.absolve match
                   case ConstantType(StringConstant(string)) =>
                     string
 
-                (rethrow(parse(rethrow(substitute(state, Text(substitution)), expr.asTerm.pos.start, expr.asTerm.pos.end),
-                    Text(parts.head)), positions.head.start, positions.head.end), typeclass)
+                (rethrow
+                  (parse
+                    (rethrow
+                      (substitute(state, substitution.tt),
+                       expr.asTerm.pos.start,
+                       expr.asTerm.pos.end),
+                     parts.head.tt),
+                   positions.head.start,
+                   positions.head.end),
+                 typeclass)
 
               case '{$typeclass: eType} =>
-                (rethrow(parse(rethrow(skip(state), expr.asTerm.pos.start, expr.asTerm.pos.end), Text(parts.head)),
-                    positions.head.start, positions.head.end), typeclass)
+                (rethrow
+                  (parse
+                    (rethrow(skip(state), expr.asTerm.pos.start, expr.asTerm.pos.end),
+                     parts.head.tt),
+                   positions.head.start,
+                   positions.head.end),
+                 typeclass)
 
           val next = '{$target.parse($target.insert($expr, $typeclass.embed($head)),
               Text(${Expr(parts.head)}))}
@@ -116,11 +129,16 @@ trait Interpolator[InputType, StateType, ResultType]:
         parts.absolve match
           case Varargs(stringExprs) => stringExprs.to(List).map(_.asTerm.pos)
 
-    try recur(exprs, parts.tail, positions.tail, rethrow(parse(initial, Text(parts.head)),
-        positions.head.start, positions.head.end), '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
+    try recur
+         (exprs,
+          parts.tail,
+          positions.tail,
+          rethrow(parse(initial, Text(parts.head)), positions.head.start, positions.head.end),
+          '{$target.parse($target.initial, Text(${Expr(parts.head)}))})
     catch
       case err: PositionalError => err match
-        case PositionalError(message, start, end) => halt(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
+        case PositionalError(message, start, end) =>
+          halt(message, Position(Position.ofMacroExpansion.sourceFile, start, end))
 
       case err: InterpolationError => err match
         case InterpolationError(message, _, _) => halt(message, Position.ofMacroExpansion)
