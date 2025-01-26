@@ -18,7 +18,7 @@ package contextual
 
 import language.experimental.captureChecking
 
-import rudiments.*
+import proscenium.*
 
 trait Substitution[InputType, -ValueType, SubstitutionType <: Label]
 extends Insertion[InputType, ValueType]
