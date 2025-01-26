@@ -321,7 +321,7 @@ as long as caution is taken to avoid a mismatch between the project's stability
 level and the required stability and maintainability of your own project.
 
 Contextual is designed to be _small_. Its entire source code currently consists
-of 153 lines of code.
+of 154 lines of code.
 
 ## Building
 
